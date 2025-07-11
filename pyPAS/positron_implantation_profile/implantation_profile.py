@@ -1,7 +1,9 @@
 import numpy as np
+import pandas as pd
+from scipy.integrate import cumtrapz
 import xarray as xr
 from warnings import warn
-
+from pyPAS.positron_implantation_profile.utils import  get_layer_indices
 
 def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
     """
@@ -80,76 +82,121 @@ def makhov_profile(depth_vector, positron_energy, density, makhov_parms):
                         coords={'x': depth_vector})
 
 
-def multilayer_implantation_profile(positron_energy: float, depth_vector: np.ndarray,
-                                      widths: list, materials_parameters: list, densities: list,
-                                      implantation_profile_function=ghosh_profile):
+def compute_cumulative_profile(
+        positron_energy: float,
+        material_params: pd.Series,
+        density: float,
+        implantation_profile_function=ghosh_profile,
+        depth_multiplier: float = 100.0,
+        num_bin=10000
+):
     """
-    Calculate the positrons implantation profile in a multilayer sample, meaning,
-    the sample is composed from a number of layers and in each layer is composed of a different material.
-    The profile of the positrons in each material is obtained by the profile function (Makhov or Ghosh) and
-    Its respected parameters which are obtained by gosh_material_parmeters and makhov_material_parmeters
+    Compute the normalized cumulative implantation profile for a given material.
+    The function use the z_bar to estimate how much depth it needs for the cumulative function.
+    Thus, for cumulative values close to 1 the function will fail.
 
     Parameters
     ----------
-    - positron_energy: float
-        the positron energy in keV
-    - depth_vector: np.ndarray
-        the vector on which the positron_implantation_profile is calculated [micro-meters]
-    - widths: list
-        floats list of each layer width
-    - materials_parameters: list
-        a list in which each element is pd.Series which represent the material parameters of the layer.
-        for example, aluminum parameters are gosh_material_parmeters().iloc[4]
-    - densities: list
-         floats list of each layer density
-    - implantation_profile_function: Callable (Default ghosh_profile)
-        The implantation profile function type (ghosh_profile or makhov_profile)
-        The type needs to aligen with the parameters given inmaterials_parameters
+    positron_energy : float
+        Positron implantation energy in keV.
+    material_params : pd.Series
+        Material parameters (e.g., from gosh_material_parameters()).
+    density : float
+        Actual layer density (g/cm^3).
+    implantation_profile_function : Callable
+        Function used to compute the implantation PDF.
+    depth_multiplier : float
+        Factor to scale the mean depth for adequate range.
+
     Returns
     -------
-    The implanted thermalized positron distributiom [positrons/micrometer/s]
-        """
+    depth : np.ndarray
+        Depth grid in μm.
+    cumulative : np.ndarray
+        Normalized cumulative distribution function (CDF).
+    """
+    if implantation_profile_function == ghosh_profile:
+        z_bar = (material_params['B'] * (material_params['density'] / density)) * positron_energy ** material_params[
+            'n']
+    else:
+        m = material_params['m']
+        n = material_params['n']
+        a_half = material_params['A_half']
 
-    implantation_profile = np.zeros_like(depth_vector)
+        z_half = a_half * positron_energy ** n / density
+        z_bar = z_half / (np.log(2)) ** (1 / m)
 
-    # if the depth vector is too short or too long rais warning
+    depth = np.linspace(0, z_bar * depth_multiplier, num_bin)
+    profile = implantation_profile_function(depth, positron_energy, density, material_params)
+
+    cumulative = cumtrapz(profile.values, depth, initial=0)
+    cumulative /= cumulative[-1]  # normalize to 1
+
+    return depth, cumulative
+
+
+def multilayer_implantation_profile(positron_energy: float, depth_vector: np.ndarray,
+                                    widths: list, materials_parameters: list, densities: list,
+                                    implantation_profile_function=ghosh_profile):
+    """
+    Calculate the positrons implantation profile in a multilayer sample using cumulative distribution of positrons in each material.
+    The motivation to use this method is that approximatly energetic positrons see the electrons as cloud.
+    This is not correct in general and was not verified by the auther!
+    It is stressed here that for full analysis direct MC simulation are probably safer for implantation in complex structures.
+    TODO: Verifiey the module
+
+    Returns
+    -------
+    pdf : xr.DataArray
+        the positron implantation profile
+    """
+
     if depth_vector[-1] > sum(widths):
-        warn('The implantation depth is larger than the size of all the layer\n' \
-             'the extra depth is caculated according to the last layer')
+        warn('The implantation depth is larger than the total sample width.\n'
+             'The extra depth will be computed based on the last layer.')
     if depth_vector[-1] < sum(widths[:-1]):
-        warn('the implentation depth dose not reach last layer')
+        warn('The implantation depth does not reach the last layer.')
 
-    # calculate each layer start and end indices #
-    layers_indices = []
-    implantation_grid_indices = xr.DataArray(range(depth_vector.size), coords={'x': depth_vector})
-    layer_first_index = 0
-    layer_last_index = 0
-    total_width = 0
+    layers = get_layer_indices(depth_vector, widths)
 
-    for width in widths:
-        total_width = total_width + width
-        layer_first_index = layer_last_index
-        layer_last_index = implantation_grid_indices.interp(x=total_width).item()
-        # if the layers are contained in the implantation profile
-        if depth_vector[-1] > total_width:
-            layer_last_index = int(np.ceil(layer_last_index))
-            layers_indices.append([layer_first_index, layer_last_index])
-        else:
-            layers_indices.append([layer_first_index, depth_vector.size - 1])
-            # The next layer is not included in the depth vector so break
-            break
-    # if the layers don't cover all the implantation profile pretend the last layer is infinite
-    if depth_vector[-1] > total_width:
-        layers_indices.append([layer_first_index, depth_vector.size - 1])
+    if sum(widths) < depth_vector[-1]:
         materials_parameters.append(materials_parameters[-1])
         densities.append(densities[-1])
 
-    # calculate the implantation depth asa function of the depth for each layer #
-    for index, layer_indices in enumerate(layers_indices):
-        implantation_profile[layer_indices[0]:layer_indices[1]] = implantation_profile_function(
-            depth_vector[layer_indices[0]:layer_indices[1]],
-            positron_energy,
-            densities[index],
-            materials_parameters[-1])
-    implantation_profile = xr.DataArray(implantation_profile, coords={'x': depth_vector})
-    return implantation_profile/implantation_profile.integrate('x')
+    cumulatives = []
+    for i, parms in enumerate(materials_parameters):
+        cumulatives.append(
+            compute_cumulative_profile(positron_energy=positron_energy, material_params=parms, density=densities[i],
+                                       implantation_profile_function=implantation_profile_function))
+
+    cumulative_profile = np.ones_like(depth_vector)
+    cumulative_total = 0.0
+    for layer in layers:
+        start, end, idx = layer.ind_start, layer.ind_end, layer.layer_number
+        material_depth, material_cumulative = cumulatives[idx]
+        # to get smoth cumulative in the itersection between layers for idx>0 we need additional depth point
+        if idx > 0:
+            local_depth = depth_vector[start:end + 1] - depth_vector[start]
+        else:
+            local_depth = depth_vector[start:end] - depth_vector[start]
+
+        # calculate the point at which the cumulative of the implantation, in the layer material alone, gets the value of cumulative_total
+        z0 = np.interp(cumulative_total, material_cumulative, material_depth,
+                       left=material_depth[0], right=material_depth[-1])
+        # interpulate from z0 to z0+layer width
+        shifted_depth = local_depth + z0
+        interp_cdf = np.interp(shifted_depth, material_depth, material_cumulative, left=0, right=1)
+
+        if idx > 0:
+            # Note: in the final layer of the sample, the length of interp_cdf might be shorter than expected by 1 so we us [:len(interp_cdf)-1] to regulate
+            cumulative_profile[start:start + len(interp_cdf[1:])] = interp_cdf[1:]
+        else:
+            cumulative_profile[start:start + len(interp_cdf)] = interp_cdf
+        cumulative_total = interp_cdf[-1]
+
+    cumulative_profile = xr.DataArray(cumulative_profile, coords={'x': depth_vector})
+    # diffrentiate in a central manner the CDF to get the PDF
+    pdf = cumulative_profile.diff('x') / cumulative_profile.x.diff('x')
+    pdf.coords['x'] = cumulative_profile.x[:-1] + np.diff(cumulative_profile.x.values) / 2
+
+    return pdf
