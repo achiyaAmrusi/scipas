@@ -1,31 +1,30 @@
 import numpy as np
 import pandas as pd
-from scipy.integrate import cumtrapz
-import xarray as xr
 from warnings import warn
+from scipy.integrate import cumtrapz
+from scipy.constants import centi, micro, nano
+import xarray as xr
 from pyPAS.positron_implantation_profile.utils import  get_layer_indices
 
 def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
     """
-    positron positron_implantation_profile according to [1].
-    For some materials the parameters for the fit can be taken from [1,2].
-    The parameters for 2 are included in this package library,
-     and can be extracted using the function PyPAS.positron_implantation_profile.gosh_material_parmeters
-    To get more exact value it is recommended to run MC simulation.
+    positron implantation profile pdf according to the ghosh profile [1].
+    Parameters for profile are included in this package library via the Material package for coomon materials [1,2].
+    For complex material it is recommended to run MC simulation.
     Parameters
     ----------
     - depth_vector: np.ndarray
-    the vector on which the positron_implantation_profile is calculated [micro-meters] (example: np.arange(1,1e5,1))
+    The depth grid [nm-meters]
     - positron_energy: float
     the positron energy in keV
-    - density: float
+    - density: float [gr/cc]
+    density of the material in gr/cc
     - gosh_parms: dictionary
-    the parameters for the fit which include the index - l, m, clm, Nlm, n, and B
+    the parameters for the fit which include the index - l, m, clm, Nlm, n, and B [nanometer/ keV**n]
     for example, aluminum parameters can be extracted using gosh_material_parmeters().iloc[4]
     Returns
     -------
-    The implanted thermalized positron distribution  [positrons/micrometer/s]
-
+    The implanted thermalized positron distribution  [positrons/nm]
     Reference
     ---------
     [1] V.J. Ghosh et al. https://doi.org/10.1016/0169-4332(94)00331-9.
@@ -47,24 +46,23 @@ def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
 
 def makhov_profile(depth_vector, positron_energy, density, makhov_parms):
     """
-    positron positron_implantation_profile according to makovian positron_implantation_profile[1].
-    The parameters for 2 are included in this package library,
-     and can be extracted using the function PyPAS.positron_implantation_profile.makhov_material_parmeters
-    To get more exact value it is recommended to run MC simulation.
+    positron implantation profile pdf according to the makovian profile [1].
+    The parameters the profile are included in this package library via the Material package,
+    For complex material it is recommended to run MC simulation.
         Parameters
         ----------
-        - depth_vector: np.ndarray
-        the vector on which the positron_implantation_profile is calculated [micro-meters]
+        - depth_vector: np.ndarray # nm
+        The depth grid [nm-meters]
         - positron_energy: float
         the positron energy in keV
-        - density: float
+        - density: float [gr/cc]
         density of the material in gr/cc
         - makhov_parms: dictionary
-        the parameters for the fit which include the index - n, m, A_half
-        for example, aluminum parameters are makhov_material_parmeters().iloc[4]
+        the parameters for the fit which include the index - n, m, A_half[gr/cm**2 *keV**n]
+
         Returns
         -------
-    The implanted thermalized positron distribution  [positrons/micrometer/s]
+    The implanted thermalized positron distribution  [positrons/nano meter]
 
     [1] Jerzy Dryzek et al. https://doi.org/10.1016/j.nimb.2008.06.033.
     """
@@ -74,9 +72,9 @@ def makhov_profile(depth_vector, positron_energy, density, makhov_parms):
 
     m = makhov_parms['m']
     n = makhov_parms['n']
-    a_half = makhov_parms['A_half']
+    a_half = makhov_parms['A_half'] * micro #  gr/ centi**2
 
-    z_half = a_half * positron_energy ** n / density
+    z_half = a_half * positron_energy ** n / density * centi / nano# nano
     z_0 = z_half / (np.log(2)) ** (1 / m)
     return xr.DataArray(m * (depth_vector ** (m - 1) / z_0 ** m) * np.exp(-(depth_vector / z_0) ** m),
                         coords={'x': depth_vector})
@@ -111,7 +109,7 @@ def compute_cumulative_profile(
     Returns
     -------
     depth : np.ndarray
-        Depth grid in μm.
+        Depth grid in nm.
     cumulative : np.ndarray
         Normalized cumulative distribution function (CDF).
     """
@@ -121,9 +119,9 @@ def compute_cumulative_profile(
     else:
         m = material_params['m']
         n = material_params['n']
-        a_half = material_params['A_half']
+        a_half = material_params['A_half'] * micro # gr/cm**2
 
-        z_half = a_half * positron_energy ** n / density
+        z_half = a_half * positron_energy ** n / density * centi/nano
         z_bar = z_half / (np.log(2)) ** (1 / m)
 
     depth = np.linspace(0, z_bar * depth_multiplier, num_bin)
@@ -148,7 +146,7 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
     Returns
     -------
     pdf : xr.DataArray
-        the positron implantation profile
+        the positron implantation profile [positron/nm]
     """
 
     if depth_vector[-1] > sum(widths):

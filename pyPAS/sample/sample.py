@@ -1,51 +1,75 @@
 from pyPAS.sample.layer import Layer
+from typing import List
+from dataclasses import dataclass, field
 
 
+@dataclass
 class Sample:
     """
-    Describe multiple layers in which the positron propagate.
-    In the first layer there is surface capture rate and the last layer continues to infinity
+    Represents a multilayer sample composed of sequential layers, each made of a single material.
+
+    This class is used to describe the full structure of a sample through which positrons diffuse,
+    annihilate, or get trapped. Each `Layer` defines a material and its spatial extent, and together
+    the sample defines a 1D geometry for the simulation or analysis.
+
     Parameters
     ----------
-    - layers: float
-    list of the layers
-    - surface_capture_rate: float
-    The surface capture rate
+    layers : List[Layer]
+        A list of layers in the sample. The order of the list corresponds to increasing depth
+        along the sample axis (e.g. z-axis in 1D).
 
     Attributes
     ----------
-    - layers: float
-    list of the layers
-    - size: float
-    The sample size [nm]
-    - surface_capture_rate: float
-    The surface capture rate
+    layers : List[Layer]
+        The list of sample layers from surface to back.
+
+    Methods
+    -------
+    total_thickness() -> float
+        Returns the total thickness of the sample [nm].
+
+    get_layer_at(position: float) -> Layer
+        Returns the layer object in which a given depth (position) lies [nm].
     """
+    layers: List[Layer] = field(default_factory=list)
+    absorbtion_length: float = 0.0 # [nm]
 
-    def __init__(self, layers: list, surface_capture_rate: float):
-        self.layers = []
-        location = 0
-        for ind, layer in enumerate(layers):
-            layer.start = location
-            location = location + layer.width
-            self.layers.append(layer)
-        self.size = location
-        # insert the surface capture rates
-        self.surface_capture_rate = surface_capture_rate
-
-    def find_layer(self, x: float) -> Layer:
-        """
-        find in which layer x is included
-        - x: float
-
-        Return
-        ------
-         x_layer: Layer
-         the Layer at which x is included
-        """
-        x_layer = self.layers[-1]
+    def __post_init__(self):
+        """Automatically set start positions of layers based on widths."""
+        start = 0.0
         for layer in self.layers:
-            if layer.start < x <= (layer.start + layer.width):
-                x_layer = layer
+            layer.start = start
+            start += layer.width
+
+    def sample_length(self) -> float:
+        """Compute the total thickness of the sample in nanometers."""
+        if not self.layers:
+            return 0.0
+        return self.layers[-1].start + self.layers[-1].width
+
+    def get_layer_at(self, position: float) -> Layer:
+        """
+        Return the layer at a specific position in the sample.
+
+        Parameters
+        ----------
+        position : float
+            Depth in nanometers from the surface (0 is the start of the first layer).
+
+        Returns
+        -------
+        Layer
+            The layer containing the given position.
+
+        Raises
+        ------
+        ValueError
+            If the position is outside the bounds of the sample.
+        """
+        positon_layer = self.layers[-1]
+        for layer in self.layers:
+            if layer.start <= position < (layer.start + layer.width):
+                positon_layer = layer
                 break
-        return x_layer
+        return positon_layer
+

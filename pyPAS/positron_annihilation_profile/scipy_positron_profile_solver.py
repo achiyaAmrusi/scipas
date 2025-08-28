@@ -4,10 +4,10 @@ from pyPAS.sample.sample import Sample
 from scipy.integrate import solve_bvp
 
 
-def scipy_positrons_annihilation_profile(positron_implantation_profile: xr.DataArray,
-                                         sample: Sample,
-                                         electric_field: xr.DataArray = None,
-                                         num_of_mesh_cells=1000):
+def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
+                         sample: Sample,
+                         electric_field: xr.DataArray = None,
+                         num_of_mesh_cells=1000):
     """
     The solution for positron positron_implantation_profile boundary problem for given sample and positron energy.
     The solution method here uses scipy solve_bvp function in order to solve the self-consistent problem.
@@ -56,9 +56,9 @@ def scipy_positrons_annihilation_profile(positron_implantation_profile: xr.DataA
         """
 
         # check in which material the point is, and get the annhilation rates
-        materials = [sample.find_layer(x).material for x in location]
+        materials = [sample.get_layer_at(x).material for x in location]
 
-        eff_annihilation_rate = np.array([sum(material.rates.values()) for material in materials])
+        eff_annihilation_rate = np.array([material.effective_annihilation_rate() for material in materials])
 
         # positron influx in the locations
         I = positron_implantation_profile.interp(x=location)
@@ -91,13 +91,13 @@ def scipy_positrons_annihilation_profile(positron_implantation_profile: xr.DataA
         (bc 2) Ddc(0)/dx = $\alpha_s$*c(0) - > radiative condition
         Note: I'd like to make from both vacuum condition and see if it is more compatible
         """
-        L_a = sample.layers[0].material.diffusion / sample.surface_capture_rate
-        L_p = (sample.layers[-1].material.diffusion / sum(sample.layers[-1].material.rates.values()))**(1/2)
-        return np.array(
-            [density_in_surface[1] - density_in_surface[0] / L_a, density_in_deep_bulk[1]+density_in_deep_bulk[0]/L_p])  # Boundary conditions
+        L_a = sample.absorbtion_length
+        L_p = sample.layers[-1].material.effective_diffusion_length()
+        return np.array([density_in_surface[1] - density_in_surface[0] / L_a,
+                         density_in_deep_bulk[1]+density_in_deep_bulk[0]/L_p])  # Boundary conditions
 
     # The mesh array
-    mesh = np.linspace(0, sample.size, num_of_mesh_cells)
+    mesh = np.linspace(0, sample.sample_length(), num_of_mesh_cells)
 
     # The initial guess of the positron positron_implantation_profile is the solution from the fast solve,
     # we can see in scipy if it converge

@@ -1,32 +1,33 @@
+from dataclasses import dataclass, field
 from pyPAS.sample.material import Material
 
-
+@dataclass
 class Layer:
     """
-    Describe a layer in a sample which consist one material continuously.
-    The class include spatial properties as beginning and end location, and a material type.
+    Represents a single continuous layer within a sample.
+
+    Each layer is defined by its spatial extent (start and width) and
+    the material it consists of. Layers are used to build up a complete
+    sample structure for positron diffusion simulations.
 
     Parameters
     ----------
-    - start: float [nm]
-    The location where the layer begin
-    - width: float
-    - width: float
-    The width of the sample
-    - material: Material
-    The material in the layer
+    start : float
+        Starting position of the layer in the sample [nm].
+    width : float
+        Width (thickness) of the layer [nm].
+    material : Material
+        The material that fills the layer uniformly.
 
     Attributes
     ----------
-    - start: float [nm]
-    The location where the layer begin
-    - width: float [nm]
-    The width of the sample
-    - material: Material
-    The material in the layer
+    start : float
+        Starting coordinate of the layer [nm].
+    width : float
+        Thickness of the layer [nm].
+    material : Material
+        Material description of the layer (including diffusion and annihilation properties).
     """
-
-    def __init__(self, starting_point: float, width: float, material: Material):
-        self.start = starting_point
-        self.width = width
-        self.material = material
+    material: Material
+    start: float = 0.0  # [nm]
+    width: float  = 0.0 # [nm]

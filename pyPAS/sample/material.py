@@ -1,47 +1,73 @@
-class Material:
+from dataclasses import dataclass, field
+from typing import List
+import numpy as np
+
+
+@dataclass
+class Defect:
     """
-    This is a class that defines a materials in which the diffused positrons propagate
-     It has the following parameters:
-    - diffusion constant,
-    - positron mobility,
-    - bulk effective annihilation rate,
-    - defects effective capturing rate
+    Represents a specific type of defect that can trap or annihilate positrons.
 
     Parameters
     ----------
-    - diffusion: float
-    positron diffusion constant.
-    can be taken as 1 where the effective annihilation rate is then 1/L**2
-    - mobility: float
-    positron mobility in presence of electrical field (the default is 0 for no electric field)
-    - annihilation_rate_bulk:
-    The annihilation rate in the bulk λ_b
-    - **kwargs
-    The kwargs parameters are used to insert different capturing rates.
-    for example (eff_defects_capture_rate =  κ_d) or (defects_1= κ_d_1, defects_2 = κ_d_2).
-    The parameters can be used for studies on defect density or positronium annihilation rate.
+    - name: str
+        Identifier for the defect type.
+    - annihilation_rate: float
+        Annihilation rate of trapped positrons in the defect [1/ps].
+    """
+    name: str
+    annihilation_rate: float  # [1/ps]
 
-    Note, The defect capturing rate is often described as proportional to the defect density.
-    Also, the total change in the probability of a positron being free is dn_b/dx = -(λ_b+κ_d)*n_b + e_d*n_d
-    where n_b probability of being free, e_d the escape rate from defect and n_d the density of defects
-    The term e_d*n_d is often emitted in diffusion length analysis because n_d is roughly proportional to n_b.
-    Thus using effective κ_d is enough.
+
+@dataclass
+class Material:
+    """
+    Describes a material through which positrons diffuse.
+
+    This includes parameters for positron diffusion and annihilation in the bulk,
+    as well as an optional list of defect types that can capture or annihilate positrons.
+
+    Parameters
+    ----------
+    - name: str
+        Name of the material.
+    - diffusion_coefficient: float
+        Positron diffusion constant [nm²/ps].
+        A value of 1 can be used for normalized unit studies.
+    - bulk_annihilation_rate: float
+        Effective annihilation rate in the bulk (λ_b) [1/ps].
+        Always present in the material.
+    - defects: list of Defect, optional
+        Defect types with their respective capture and annihilation rates.
+        These represent additional positron loss channels.
+
+    Notes
+    -----
+    - Defect capture rates can be interpreted as proportional to the defect density.
+    - The total loss rate from the free positron population is (λ_b + κ_d), where κ_d is the
+      sum of all defect capture rates.
+    - In standard diffusion length analysis, defect escape terms (e_d * n_d) are often neglected,
+      assuming n_d ∝ n_b.
 
     Attributes
     ----------
-    - diffusion: float
-    positron diffusion constant.
-    - mobility: float
-    positron mobility in presence of electrical field (the default is 0 for no electric field)
-    - rates: float
-    The effective annihilation and capture rates of positrons in the sample bulk
-
+    - name: str
+    - diffusion_coefficient: float
+    - bulk_annihilation_rate: float
+    - defects: List[Defect]
     """
+    name: str ='temporary'
+    diffusion: float  = 0.0# [nm²/ps]
+    mobility: float  = 0.0# [nm²/ps*V]
+    bulk_annihilation_rate: float = 0.0  # [1/ps] – always present
+    defects: List[Defect] = field(default_factory=list)
 
-    def __init__(self, diffusion, mobility, annihilation_rate_bulk, **kwargs):
-        self.diffusion = diffusion
-        self.mobility = mobility
-        self.rates = {'bulk': annihilation_rate_bulk}
-        self.rates.update(kwargs)
-#        self.effective_length = self.diffusion/sum(self.rates.values())
+    def effective_annihilation_rate(self):
+        effective_annihilation_rate = self.bulk_annihilation_rate
+        if self.defects:
+            for defect in self.defects:
+                effective_annihilation_rate += defect.annihilation_rate
+        return effective_annihilation_rate
 
+    def effective_diffusion_length(self):
+        return np.sqrt(self.diffusion / self.effective_annihilation_rate())

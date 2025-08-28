@@ -1,56 +1,42 @@
-import pandas as pd
+import numpy as np
 import xarray as xr
 from pyPAS.sample.sample import Sample
 
 
-def profile_annihilation_fraction(positron_profile: xr.DataArray, sample: Sample):
+def annihilation_fraction_per_layer(positron_profile: xr.DataArray, sample: Sample) -> xr.DataArray:
     """
-    Function calculate the rates of positron annihilation per annihillation rate.
-    The rates are taken from Sample.Layer.Material.rates
+    Calculate the  annihilation rate fraction of positron per layer.
     Parameters
     ----------
     - positron_profile: xr.DataArray
-     The positron positron_implantation_profile in the sample
+     The positron profile (in the sample (after diffusion)
     -  sample: Sample
-     The sample which contains the different annihilation rate
+     The sample in which they annihilate
 
      Return
      -------
-     DataFrame
-     table of the annihilation rate for each layer and annihilation spot type
+     xarray
+     annihilation rate in each layer and surface
     """
     layers = sample.layers
-    layers_location = [(layer.start, layer.start + layer.width) for layer in layers]
+    num_of_layers = len(layers)
+    layers_names = [f'layer_{i}' for i in range(num_of_layers)]
 
-    total_annihilation_fractions = pd.DataFrame({'layer': [], 'annihilation_type': [], 'annihilation_fraction': []})
+    annihilation_rate = np.zeros(num_of_layers+1) # layers and surface
 
-    # surface
-    surface_annihilation_fraction = (positron_profile[0] * sample.surface_capture_rate).item()
-    total_annihilation_fractions = pd.concat([total_annihilation_fractions,
-                                              pd.DataFrame({'layer': [0],
-                                                            'annihilation_type': ['surface'],
-                                                            'annihilation_fraction': [surface_annihilation_fraction]
-                                                            })],
-                                             ignore_index=True)
+    # layers positrons annihilation rates
     for i, layer in enumerate(layers):
-        layer_positron_profile = positron_profile.sel(x=slice(layers_location[i][0], layers_location[i][1]))
+        layer_positron_profile = positron_profile.sel(x=slice(layer.start, layer.start+layer.width))
         positron_fraction_in_layer = layer_positron_profile.integrate('x')
+        annihilation_rate[i] = layer.material.effective_annihilation_rate() * positron_fraction_in_layer.item()
 
-        for annihilation_type in layer.material.rates:
-            annihilation_fraction = (
-                    layer.material.rates[annihilation_type] * positron_fraction_in_layer).item()
-            # add all the bulk annihilation fraction of annihilation_type
-            total_annihilation_fractions = pd.concat([total_annihilation_fractions,
-                                                      pd.DataFrame({'layer': [i],
-                                                                    'annihilation_type': [annihilation_type],
-                                                                    'annihilation_fraction': [annihilation_fraction]
-                                                                    })],
-                                                     ignore_index=True)
+    # surface positrons annihilation rate
+    annihilation_rate[-1] = positron_profile[0].item() * sample.layers[0].material.diffusion / sample.absorbtion_length
+    layers_names.append('surface')
 
-    # normalization
-    total_annihilation_fractions.annihilation_fraction = (total_annihilation_fractions.annihilation_fraction /
-                                                          total_annihilation_fractions.annihilation_fraction.sum())
-    return total_annihilation_fractions.set_index(['layer', 'annihilation_type'])
+    annihilation_fractions = xr.DataArray(annihilation_rate, coords={'layer':layers_names})/annihilation_rate.sum()
+
+    return annihilation_fractions
 
 
 
