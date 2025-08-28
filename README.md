@@ -20,12 +20,20 @@ Modular, open‑source, and built on standard scientific Python libraries for tr
 
 ## **Install**
 
-- **Requirements:** Python 3.9+, Windows/macOS/Linux, recent pip  
-- **Latest (GitHub):**
-pip install --upgrade pip pip install "git+https://github.com/achiyaAmrusi/pyPAS"
-- **Dev install (editable):**
-git clone https://github.com/achiyaAmrusi/pyPAS cd pyPAS pip install -e ".[dev]"
+- **Requirements:** Python 3.9+, and the rest are listed in `requirements.txt`.
+To install dependencies, run:
 
+```bash
+pip install -r requirements.txt
+```
+- **Latest (GitHub):**
+```
+pip install "git+https://github.com/achiyaAmrusi/pyPAS"
+```
+- **Dev install (editable):**
+```
+git clone https://github.com/achiyaAmrusi/pyPAS cd pyPAS pip install -e ".[dev]"
+```
 ---
 
 ## **Features**
