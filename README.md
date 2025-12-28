@@ -66,4 +66,4 @@ git clone https://github.com/achiyaAmrusi/pyPAS cd pyPAS pip install -e ".[dev]"
 
 - **License:** MIT license
 - **Contributions:** Issues and PRs are welcome. Please include minimal reproducible examples.
-- **Citation:** If PyPAS contributes to your work, please mention the package. After the paper is finished, the citation will be updated
+- **Citation:** If PyPAS contributes to your work, please mention the package https://doi.org/10.48550/arXiv.2509.08023. 
