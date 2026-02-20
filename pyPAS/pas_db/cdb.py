@@ -112,7 +112,7 @@ class PAScdb:
 
         # Compute Doppler and resolution components
         db = (cdb_pairs['energy_1'] - cdb_pairs['energy_2']) / 2
-        res = (cdb_pairs['energy_1'] + cdb_pairs['energy_2']) - 2 * ELECTRON_REST_MASS
+        res = ((cdb_pairs['energy_1'] + cdb_pairs['energy_2']) - 2 * ELECTRON_REST_MASS)/2
 
         # Define bin edges
         e_min, e_max = energy_dynamic_range

@@ -7,6 +7,6 @@ setup(
     url='',
     license='MIT',
     author='ahiaa',
-    author_email='aiha.amrosi@mail.huji.ac.il',
+    author_email='ahia.amrosi@mail.huji.ac.il',
     description='PAS tools'
 )
