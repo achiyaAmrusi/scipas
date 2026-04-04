@@ -1,4 +1,4 @@
-from pyPAS.sample.layer import Layer
+from pyPAS.materials.layer import Layer
 from typing import List
 from dataclasses import dataclass, field
 
@@ -6,27 +6,27 @@ from dataclasses import dataclass, field
 @dataclass
 class Sample:
     """
-    Represents a multilayer sample composed of sequential layers, each made of a single material.
+    Represents a multilayer materials composed of sequential layers, each made of a single material.
 
-    This class is used to describe the full structure of a sample through which positrons diffuse,
+    This class is used to describe the full structure of a materials through which positrons diffuse,
     annihilate, or get trapped. Each `Layer` defines a material and its spatial extent, and together
-    the sample defines a 1D geometry for the simulation or analysis.
+    the materials defines a 1D geometry for the simulation or analysis.
 
     Parameters
     ----------
     layers : List[Layer]
-        A list of layers in the sample. The order of the list corresponds to increasing depth
-        along the sample axis (e.g. z-axis in 1D).
+        A list of layers in the materials. The order of the list corresponds to increasing depth
+        along the materials axis (e.g. z-axis in 1D).
 
     Attributes
     ----------
     layers : List[Layer]
-        The list of sample layers from surface to back.
+        The list of materials layers from surface to back.
 
     Methods
     -------
     total_thickness() -> float
-        Returns the total thickness of the sample [nm].
+        Returns the total thickness of the materials [nm].
 
     get_layer_at(position: float) -> Layer
         Returns the layer object in which a given depth (position) lies [nm].
@@ -42,14 +42,14 @@ class Sample:
             start += layer.width
 
     def sample_length(self) -> float:
-        """Compute the total thickness of the sample in nanometers."""
+        """Compute the total thickness of the materials in nanometers."""
         if not self.layers:
             return 0.0
         return self.layers[-1].start + self.layers[-1].width
 
     def get_layer_at(self, position: float) -> Layer:
         """
-        Return the layer at a specific position in the sample.
+        Return the layer at a specific position in the materials.
 
         Parameters
         ----------
@@ -64,7 +64,7 @@ class Sample:
         Raises
         ------
         ValueError
-            If the position is outside the bounds of the sample.
+            If the position is outside the bounds of the materials.
         """
         positon_layer = self.layers[-1]
         for layer in self.layers:

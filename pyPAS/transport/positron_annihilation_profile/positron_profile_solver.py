@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pyPAS.sample.sample import Sample
+from pyPAS.materials.sample import Sample
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
@@ -10,20 +10,20 @@ def profile_solver(positron_implantation_profile: xr.DataArray,
                    electric_field: xr.DataArray = None,
                    mesh_size=10000):
     """
-    Finite differences solver for the positron annihilation profile in a sample, c(z).
+    Finite differences solver for the positron annihilation profile in a materials, c(z).
     detailed description of the solver will be published in future paper [].
 
     Parameters
     ----------
     - positron_implantation_profile: xarray.DataArray
-    Thermal positron implantation profile [positron/length] in the sample.
+    Thermal positron implantation profile [positron/length] in the materials.
     Note that in the code the profile is linearly interpolated into the mesh points
      See ghosh_profile, makhov_profile
-    - sample: Sample
-    The sample for which c(z) is calculated,
-      it is advised to define the last layer to be very large such that c(z) is expected to be negligible at the end of the sample
+    - materials: Sample
+    The materials for which c(z) is calculated,
+      it is advised to define the last layer to be very large such that c(z) is expected to be negligible at the end of the materials
     - electric_field: xarray.DataArray
-    The electric field in the sample
+    The electric field in the materials
     If None, taken to be 0
     - mesh_size: int (default 10000)
     Specifies the number of cells used to discretize the 1D domain in the finite element method.
@@ -68,10 +68,10 @@ def sample_to_material_vectors(sample: Sample,
 
     Parameters
     ----------
-    - sample: Sample
-        The layered sample defining material properties.
+    - materials: Sample
+        The layered materials defining material properties.
     - mesh_points: np.ndarray
-        Evenly spaced mesh points spanning the sample depth.
+        Evenly spaced mesh points spanning the materials depth.
     - electric_field: xr.DataArray, optional
         Electric field defined on the mesh coordinates.
         If None, assumed to be zero everywhere.

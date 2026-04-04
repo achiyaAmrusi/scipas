@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pyPAS.sample.sample import Sample
+from pyPAS.materials.sample import Sample
 
 
 def annihilation_fraction_per_layer(positron_profile: xr.DataArray, sample: Sample) -> xr.DataArray:
@@ -9,9 +9,9 @@ def annihilation_fraction_per_layer(positron_profile: xr.DataArray, sample: Samp
     Parameters
     ----------
     - positron_profile: xr.DataArray
-     The positron profile (in the sample (after diffusion)
-    -  sample: Sample
-     The sample in which they annihilate
+     The positron profile (in the materials (after diffusion)
+    -  materials: Sample
+     The materials in which they annihilate
 
      Return
      -------

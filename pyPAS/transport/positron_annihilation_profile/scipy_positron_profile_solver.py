@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pyPAS.sample.sample import Sample
+from pyPAS.materials.sample import Sample
 from scipy.integrate import solve_bvp
 
 
@@ -9,16 +9,16 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
                          electric_field: xr.DataArray = None,
                          num_of_mesh_cells=1000):
     """
-    The solution for positron positron_implantation_profile boundary problem for given sample and positron energy.
+    The solution for positron positron_implantation_profile boundary problem for given materials and positron energy.
     The solution method here uses scipy solve_bvp function in order to solve the self-consistent problem.
     because of its self-consisting nature this method is slow comparable with the matrix solution.
 
     Parameters
     ----------
     - positron_implantation_profile: xarray.DataArray
-    A function of the thermal positrons per micron in the sample. see also ghosh_profile, makhov_profile
-    - sample: Sample
-    The sample for which the positron_implantation_profile is calculated,
+    A function of the thermal positrons per micron in the materials. see also ghosh_profile, makhov_profile
+    - materials: Sample
+    The materials for which the positron_implantation_profile is calculated,
       it is advised to define the last layer to be
         at least 3 mean free path from the end of the positron_implantation_profile (or where the implantation is negligible).
     - electric_field: xarray.DataArray
@@ -26,7 +26,7 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
     If None, taken to be 0
     - num_of_mesh_cells: int
     The number of mesh cells for the system
-    The function takes the total size of he sample, divide by num_of_mesh_cells,
+    The function takes the total size of he materials, divide by num_of_mesh_cells,
      and this is the size of ever mesh cell
      default is 1000
     Returns
@@ -85,7 +85,7 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
     # define the boundary condition for the ode system
     def boundary_conditions(density_in_surface, density_in_deep_bulk):
         """
-        The boundary condition definition for the beginning and end of the sample/
+        The boundary condition definition for the beginning and end of the materials/
        The boundary conditions given are
         (bc 1) dc(x_f)/dx = c(x_f)/L_plus
         (bc 2) Ddc(0)/dx = $\alpha_s$*c(0) - > radiative condition

@@ -4,7 +4,7 @@ from warnings import warn
 from scipy.integrate import cumtrapz
 from scipy.constants import centi, micro, nano
 import xarray as xr
-from pyPAS.positron_implantation_profile.utils import  get_layer_indices
+from pyPAS.transport.positron_implantation_profile.utils import  get_layer_indices
 
 def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
     """
@@ -137,7 +137,7 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
                                     widths: list, materials_parameters: list, densities: list,
                                     implantation_profile_function=ghosh_profile):
     """
-    Calculate the positrons implantation profile in a multilayer sample using cumulative distribution of positrons in each material.
+    Calculate the positrons implantation profile in a multilayer materials using cumulative distribution of positrons in each material.
     The motivation to use this method is that approximatly energetic positrons see the electrons as cloud.
     This is not correct in general and was not verified by the auther!
     It is stressed here that for full analysis direct MC simulation are probably safer for implantation in complex structures.
@@ -150,7 +150,7 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
     """
 
     if depth_vector[-1] > sum(widths):
-        warn('The implantation depth is larger than the total sample width.\n'
+        warn('The implantation depth is larger than the total materials width.\n'
              'The extra depth will be computed based on the last layer.')
     if depth_vector[-1] < sum(widths[:-1]):
         warn('The implantation depth does not reach the last layer.')
@@ -186,7 +186,7 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
         interp_cdf = np.interp(shifted_depth, material_depth, material_cumulative, left=0, right=1)
 
         if idx > 0:
-            # Note: in the final layer of the sample, the length of interp_cdf might be shorter than expected by 1 so we us [:len(interp_cdf)-1] to regulate
+            # Note: in the final layer of the materials, the length of interp_cdf might be shorter than expected by 1 so we us [:len(interp_cdf)-1] to regulate
             cumulative_profile[start:start + len(interp_cdf[1:])] = interp_cdf[1:]
         else:
             cumulative_profile[start:start + len(interp_cdf)] = interp_cdf

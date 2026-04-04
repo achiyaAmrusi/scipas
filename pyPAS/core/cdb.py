@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pyspectrum import Peak
 from uncertainties import ufloat
-from pyPAS.pas_db import PASdb
+from pyPAS.core import PASdb
 import xarray as xr
 ELECTRON_REST_MASS = 511
 

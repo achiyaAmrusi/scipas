@@ -256,7 +256,7 @@ class PASdb(Peak):
         Returns
         -------
         PASdb
-        pas_db spectrum from the file in PASdb class .
+        core spectrum from the file in PASdb class .
         """
         # Load the pyspectrum file in form of DataFrame
         spectrum = Spectrum.from_dataframe(spectrum_data_frame, energy_calibration_poly=energy_calibration_poly,
@@ -280,7 +280,7 @@ class PASdb(Peak):
         Returns
         -------
         PASdb
-        pas_db spectrum from the file in PASdb class .
+        core spectrum from the file in PASdb class .
         """
         # Load the pyspectrum file in form of DataFrame
 
