@@ -4,13 +4,13 @@ from uncertainties import ufloat
 from uncertainties.unumpy import nominal_values, std_devs
 from scipy.optimize import  least_squares
 from pyPAS.materials import Sample, Material, Layer
-from pyPAS.transport.positron_annihilation_profile import profile_solver
-from pyPAS.transport.positron_annihilation_profile import annihilation_fraction_per_layer
+from pyPAS.transport.diffusion import profile_solver
+from pyPAS.transport.diffusion import annihilation_fraction_per_layer
 
 
-class ThreeBulkDiffusionLengthOptimization:
+class OneBulkDiffusionLengthOptimization:
     """
-    Optimize the bulk positron diffusion length of a three-layer materials
+    Optimize the bulk positron diffusion length of a uniform single-layer materials
     (plus surface contribution) to best fit experimentally measured S-parameters.
 
     The optimization is based on solving a simplified effective positron transport equation:
@@ -27,14 +27,14 @@ class ThreeBulkDiffusionLengthOptimization:
     The class uses:
         1. Provided implantation profiles for multiple beam energies.
         2. Experimental S-parameter data with uncertainties.
-        3. A three-layer initial materials as a starting guess.
+        3. A single-layer initial materials as a starting guess.
 
     Workflow:
         - Construct trial samples for candidate diffusion lengths.
         - Solve the positron annihilation profile for each implantation energy.
         - Compute annihilation fractions in surface and bulk.
         - Fit these to experimental S values using least-squares regression.
-        - Extract the best-fit diffusion lengths and their 1σ uncertainty.
+        - Extract the best-fit diffusion length and its 1σ uncertainty.
 
     Parameters
     ----------
@@ -79,13 +79,12 @@ class ThreeBulkDiffusionLengthOptimization:
         self.s_measurement = nominal_values(s_measurement)
         self.s_measurement_dev = std_devs(s_measurement)
         self.num_of_mesh_cells = num_of_mesh_cells
-        if len(initial_guess.layers)!=3:
-            raise ValueError("Sample should have only 3 layers")
+        if len(initial_guess.layers)!=1:
+            raise ValueError("Sample should have only 1 layers")
 
-
-    def make_sample(self, diffusion_length_0, diffusion_length_1, diffusion_length_2):
+    def make_sample(self, diffusion_length):
         """
-        Construct a simplified three-layer materials for a given diffusion length.
+        Construct a simplified single-layer materials for a given diffusion length.
 
         The materials consists of:
         - One layer spanning the full length of the initial materials.
@@ -95,9 +94,8 @@ class ThreeBulkDiffusionLengthOptimization:
 
         Parameters
         ----------
-        diffusion_length_0, diffusion_length_1, diffusion_length_2: float
-            Trial positron diffusion length (in nm).
-
+        diffusion_length : float
+            Positron diffusion length (L+).
 
         Returns
         -------
@@ -105,13 +103,9 @@ class ThreeBulkDiffusionLengthOptimization:
             A new Sample object containing a single layer with the above properties.
         """
         #eff_absorbtion_length = self.initial_sample.absorbtion_length * self.initial_sample.layers[0].material.diffusion
-        material_0 = Material(diffusion=1, mobility=0, bulk_annihilation_rate=1/diffusion_length_0**2)
-        material_1 = Material(diffusion=1, mobility=0, bulk_annihilation_rate=1 / diffusion_length_1 ** 2)
-        material_2 = Material(diffusion=1, mobility=0, bulk_annihilation_rate=1 / diffusion_length_2 ** 2)
-        layer_0 = Layer(start=0, width=self.initial_sample.layers[0].width, material=material_0)
-        layer_1 = Layer(start=self.initial_sample.layers[1].start, width=self.initial_sample.layers[1].width, material=material_1)
-        layer_2 = Layer(start=self.initial_sample.layers[2].start, width=self.initial_sample.layers[2].width,material=material_2)
-        return Sample(layers=[layer_0, layer_1, layer_2], absorbtion_length=1)
+        material = Material(diffusion=1, mobility=0, bulk_annihilation_rate=1/diffusion_length**2)
+        layer = Layer(start=0, width=self.initial_sample.sample_length(), material=material)
+        return Sample(layers=[layer], absorbtion_length=1)
 
     def _profile_to_fractions(self, positron_profile, sample):
         """
@@ -137,10 +131,8 @@ class ThreeBulkDiffusionLengthOptimization:
         """
         annihilation_fraction = annihilation_fraction_per_layer(positron_profile, sample)
         surface = annihilation_fraction.sel(layer='surface').item()
-        bulk_0 = annihilation_fraction.sel(layer='layer_0').item()
-        bulk_1 = annihilation_fraction.sel(layer='layer_1').item()
-        bulk_2 = annihilation_fraction.sel(layer='layer_2').item()
-        return [surface, bulk_0, bulk_1, bulk_2]
+        bulk = annihilation_fraction.sel(layer='layer_0').item()
+        return [surface, bulk]
 
     def layers_transport_solver(self, sample, positron_implantation_profiles):
         """
@@ -159,6 +151,7 @@ class ThreeBulkDiffusionLengthOptimization:
 
         Returns
         -------
+
         annihilation_channel_rate_matrix : np.ndarray
             Shape (n_profiles, 2). Each row contains:
             [fraction_surface, fraction_bulk]
@@ -182,7 +175,7 @@ class ThreeBulkDiffusionLengthOptimization:
             Matrix of annihilation fractions.
             Shape: (n_profiles, n_channels)
             - Each row corresponds to an implantation profile
-            - Each column corresponds to a channel (surface, bulk_0, etc.)
+            - Each column corresponds to a channel (surface, bulk, etc.)
 
         Returns
         -------
@@ -192,13 +185,13 @@ class ThreeBulkDiffusionLengthOptimization:
         return np.linalg.lstsq(annihilation_channel_rate_matrix, self.s_measurement, rcond=None)[0]
 
 
-    def s_parameter_calculation(self, diffusion_length_0, diffusion_length_1, diffusion_length_2):
+    def s_parameter_calculation(self, diffusion_length):
         """
         For given materials, given the materials parameters, function calculate the expected S parameter per energy
 
         Parameters
         ----------
-        diffusion_length_0, diffusion_length_1, diffusion_length_2: float
+        diffusion_length : float
             Trial positron diffusion length (in nm).
 
         Returns
@@ -206,28 +199,27 @@ class ThreeBulkDiffusionLengthOptimization:
         s_sample: np.ndarray
         the expected s parameters
         """
-        sample = self.make_sample(diffusion_length_0, diffusion_length_1, diffusion_length_2)
+        sample = self.make_sample(diffusion_length)
         # find s_parm using linear regression
         annihilation_channel_rate_matrix = self.layers_transport_solver(sample, self.positron_implantation_profiles)
         s_vec = self.s_value_per_layer(annihilation_channel_rate_matrix)
         s_sample = annihilation_channel_rate_matrix @ s_vec
 
-        if np.any(s_vec[1:] >= 1) or np.any(s_vec<=0) :
+        if s_vec[1] >= 1 or np.any(s_vec<=0) :
             # if the s value is above 1 make the result high
             return np.full_like(s_sample, 1e6)
         return s_sample
 
-    def residuals(self, diffusion_lengths: np.array) -> np.ndarray:
+    def residuals(self, diffusion_length: float) -> np.ndarray:
         """
-        Residual function for least-squares optimization of the positron diffusion lengths.
+        Residual function for least-squares optimization of the positron diffusion length.
 
         This computes the weighted difference between measured and calculated S-parameters
         for a given trial diffusion length.
 
         Parameters
         ----------
-        diffusion_lengths : np.ndarray
-        [diffusion_length_0, diffusion_length_1, diffusion_length_2]
+        diffusion_length : float
             Trial positron diffusion length (in nm).
 
         Returns
@@ -237,7 +229,7 @@ class ThreeBulkDiffusionLengthOptimization:
             (S_calc - S_measured) / sigma_measured
             where `sigma_measured` is the experimental uncertainty.
         """
-        s_calc = self.s_parameter_calculation(diffusion_lengths[0], diffusion_lengths[1], diffusion_lengths[2])
+        s_calc = self.s_parameter_calculation(diffusion_length)
         return (s_calc - self.s_measurement) / self.s_measurement_dev  # weighted residuals
 
     def extract_error(self, ls_results):
@@ -254,15 +246,10 @@ class ThreeBulkDiffusionLengthOptimization:
             Must contain attributes:
             - `jac` : Jacobian matrix at the solution.
             - `x`   : Best-fit parameter values.
-
         Returns
         -------
         ufloat
             The best-fit value of the first parameter with its 1-sigma uncertainty.
-
-        Notes
-        -----
-        - The method does not take into account the covariance of the three diffusion length
         """
         # Approximate the covariance (Gauss-Newton)
         J = ls_results.jac
@@ -272,24 +259,22 @@ class ThreeBulkDiffusionLengthOptimization:
         VT = VT[:s.size]
         cov = np.dot(VT.T / s ** 2, VT)  # already correctly scaled if residuals are normalized
 
-        best_fits = ls_results.x
-        errs = np.sqrt(np.diag(cov))  # 1-sigma uncertainties for each parameter
-
-        return [ufloat(val, err) for val, err in zip(best_fits, errs)]
+        best_fit = ls_results.x[0]
+        err = np.sqrt(cov[0, 0])
+        return ufloat(best_fit, err)
 
     def optimize_diffusion_length(self, bounds=None):
         """
-        Optimize the diffusion length for a three-layer materials.
+        Optimize the diffusion length for a one-layer materials.
         Performs nonlinear least-squares minimization of the residuals
         between measured and modeled S-parameters, with respect to the
-        diffusion lengths.
+        diffusion length.
 
         Parameters
         ----------
         bounds : tuple of (float, float), optional
             Lower and upper bounds for the diffusion length.
             Default is (0, 1 Micron). Must satisfy 0 <= lower <= upper.
-            The bounds are the same for all diffusion length !
 
         Returns
         -------
@@ -297,26 +282,21 @@ class ThreeBulkDiffusionLengthOptimization:
             Mapping of layer name ("layer_0") to the optimized diffusion
             length with its 1-sigma uncertainty.
         """
-        material_0 = (self.initial_sample.layers[0]).material
-        material_1 = (self.initial_sample.layers[1]).material
-        material_2 = (self.initial_sample.layers[2]).material
+        material = (self.initial_sample.layers[0]).material
         # The effective rate is the inverse of the diffusion length squared
-        initial_diffusion_length_layer_0 = (material_0.diffusion/material_0.effective_annihilation_rate())**0.5
-        initial_diffusion_length_layer_1 = (material_1.diffusion / material_1.effective_annihilation_rate()) ** 0.5
-        initial_diffusion_length_layer_2 = (material_2.diffusion / material_2.effective_annihilation_rate()) ** 0.5
-        initial_guess = [initial_diffusion_length_layer_0, initial_diffusion_length_layer_1, initial_diffusion_length_layer_2]
+        initial_diffusion_length = (material.diffusion/material.effective_annihilation_rate())**0.5
+        initial_guess = [initial_diffusion_length]
 
         # set bound of the effective diffusion and the surface_capture_rate
         if bounds is None:
-            bounds = [0, 1000]
+            bounds = (0, 1000)
         elif not 0<=bounds[0]<=bounds[1]:
             raise ValueError("lower bound needs to be lower than the upper bound")
 
-        bounds = ([bounds[0], bounds[0], bounds[0]], [bounds[1], bounds[1], bounds[1]])
         # optimization
         ls_result = least_squares(fun=self.residuals, x0=initial_guess, bounds=bounds)
 
         # results extraction
-        diffusion_lengths = self.extract_error(ls_result)
+        diffusion_length = self.extract_error(ls_result)
 
-        return {'layer_0':diffusion_lengths[0], 'layer_1':diffusion_lengths[1], 'layer_2':diffusion_lengths[2]}
+        return {'layer_0':diffusion_length}

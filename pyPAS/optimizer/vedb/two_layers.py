@@ -4,8 +4,8 @@ from uncertainties import ufloat
 from uncertainties.unumpy import nominal_values, std_devs
 from scipy.optimize import  least_squares
 from pyPAS.materials import Sample, Material, Layer
-from pyPAS.transport.positron_annihilation_profile import profile_solver
-from pyPAS.transport.positron_annihilation_profile import annihilation_fraction_per_layer
+from pyPAS.transport.diffusion import profile_solver
+from pyPAS.transport.diffusion import annihilation_fraction_per_layer
 
 
 class TwoBulkDiffusionLengthOptimization:
