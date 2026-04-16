@@ -4,6 +4,7 @@ from pyPAS.core.lt import PASLifetime
 from pyPAS.optimizer.lifetime.inversion import LifetimeInvert
 from pyPAS.optimizer.lifetime.inversion.utils import _response_matrix, _svd_truncate
 
+
 class MaximalEntropyInversion(LifetimeInvert):
     """
     Inverts a positron lifetime spectrum into a lifetime distribution f(τ)
@@ -86,6 +87,7 @@ class MaximalEntropyInversion(LifetimeInvert):
         f_hat : optimal distribution at this alpha, shape (N_tau,).
         u_opt : optimal subspace vector, shape (s,).
         """
+
         def neg_Q(u):
             return -self._Q(self._f_from_u(u, prior, U),
                             alpha, prior, U, V, sigma, Ut, data, data_err)
@@ -199,4 +201,5 @@ class MaximalEntropyInversion(LifetimeInvert):
             maxiter=maxiter
         )
 
+        f_hat = f_hat / np.trapz(f_hat, self.characteristic_time_grid)
         return alpha_opt, f_hat
