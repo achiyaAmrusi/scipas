@@ -1,192 +1,154 @@
 import numpy as np
-import xarray as xr
 from scipy.optimize import nnls, minimize
 from pyPAS.core.lt import PASLifetime
 from pyPAS.optimizer.lifetime.inversion import LifetimeInvert
-from pyPAS.optimizer.lifetime.inversion.utils import _response_matrix
-
+from pyPAS.optimizer.lifetime.inversion.utils import _response_matrix, _svd_truncate
 
 class TikhonovRegularization(LifetimeInvert):
     """
     Inverts a positron lifetime spectrum into a lifetime distribution q(τ)
     using Tikhonov regularization with automatic alpha selection.
 
-    The inversion solves:
-        min ||R@q - s||^2 + α||D^2@q||^2,  q >= 0
+    Solves:
+        min ||R·dτ·q - (s - bg)||² + α·||D²·q||²,  q >= 0
 
-    where R is the response matrix, s is the normalized spectrum,
-    D^2 is the second-order finite difference operator (penalizes curvature),
-    and α controls the smoothness tradeoff.
+    where R is the response matrix, s is the raw count spectrum, bg is the
+    per-channel background estimate, and D² is the second-order finite
+    difference operator penalizing curvature.
 
-    Alpha is selected automatically by minimizing the chi-squared residual
-    between the forward model and the data, searched in log space.
+    Alpha is selected by minimizing |χ²/N - 1| (discrepancy principle).
     """
 
     def _tikhonov_solution(self,
-                           normlized_pals: np.ndarray,
+                           net_counts: np.ndarray,
                            response: np.ndarray,
                            alpha: float,
-                           maxiter=None) -> np.ndarray:
+                           maxiter: int = None) -> np.ndarray:
         """
-        Solve the regularized inversion for a fixed alpha via augmented NNLS.
+        Solve the regularized NNLS for fixed alpha.
 
-        The response matrix approximates the continuous integral ∫ R(t,τ) q(τ) dτ,
-        making q a true probability density over τ rather than a per-bin weight.
-
-        The augmented system is:
-            [R·dτ        ] q = [s]
-            [√α · D²     ]     [0]
-        (first equation is the optimization and the second is the penalty)
+        Augmented system:
+            [R·dτ   ] q = [s - bg]
+            [√α·D²  ]     [0     ]
 
         Parameters
         ----------
-        normlized_pals : np.ndarray
-            Measured spectrum normalized to unit integral.
-        response : np.ndarray
-            Response matrix of shape (n_time, n_tau).
-        alpha : float
-            Regularization strength.
-        maxiter : int, optional
-            Max iterations for NNLS solver.
+        net_counts : background-subtracted spectrum (may contain negatives).
+        response : response matrix, shape (n_time, n_tau).
+        alpha : regularization strength.
+        maxiter : max NNLS iterations.
 
         Returns
         -------
-        q : np.ndarray
-            Lifetime distribution over the characteristic time grid.
+        q : lifetime distribution over characteristic_time_grid.
         """
         n_tau = len(self.characteristic_time_grid)
         dtau = self.characteristic_time_grid[1] - self.characteristic_time_grid[0]
-
-        D2 = (np.eye(n_tau, k=0) - 2 * np.eye(n_tau, k=1) + np.eye(n_tau, k=2))[:n_tau - 2]
+        D2 = (np.eye(n_tau, k=0) - 2*np.eye(n_tau, k=1) + np.eye(n_tau, k=2))[:n_tau - 2]
 
         A_aug = np.vstack([response * dtau, np.sqrt(alpha) * D2])
-        b_aug = np.concatenate([normlized_pals, np.zeros(n_tau - 2)])
+        b_aug = np.concatenate([net_counts, np.zeros(n_tau - 2)])
 
         q, _ = nnls(A_aug, b_aug, maxiter=maxiter)
         return q
 
-    def chi_sq_log(self, log_alpha, pals, response, maxiter, error=True) -> float:
+    def _chi_sq(self,
+                log_alpha: np.ndarray,
+                counts: np.ndarray,
+                net_counts: np.ndarray,
+                response: np.ndarray,
+                background_value: float,
+                maxiter: int,
+                error: bool) -> float:
         """
-        Chi-squared residual between forward model and data, as a function of log(α).
+        Discrepancy-principle target: |χ²/N - 1|.
 
-        Optimized in log space so alpha stays positive and spans orders of magnitude
-        naturally. If error=True, residuals are weighted by Poisson uncertainties.
+        Finds alpha where the forward model residual matches the noise level.
+        Works in raw count space so Poisson errors are natural.
 
         Parameters
         ----------
-        log_alpha : array-like of length 1
-            Log of the regularization parameter.
-        pals : PASLifetime
-            Measured lifetime spectrum.
-        response : np.ndarray
-            Response matrix.
-        maxiter : int
-            Max NNLS iterations.
-        error : bool
-            If True, use Poisson-weighted chi-squared. Default True.
-
-        Returns
-        -------
-        float
-            Sum of (weighted) squared residuals.
+        log_alpha : length-1 array, log of regularization parameter.
+        counts : raw measured counts (for Poisson error estimate).
+        net_counts : background-subtracted counts passed to NNLS.
+        response : response matrix.
+        background_value : background level estimated from the flat tail
+        maxiter : max NNLS iterations.
+        error : if True, use Poisson-weighted chi-squared.
         """
-        alpha = float(np.exp(log_alpha[0]))
-        alpha = np.clip(alpha, 1e-12, 1e-1)
+        alpha = np.clip(np.exp(log_alpha[0]), 1e-12, 1e-1)
 
-        counts = pals.lifetime.counts
-        time = pals.lifetime.energy.values
-        norm = pals.lifetime.integrate('energy').item()
-        normlized_pals = counts / norm
-
-        if error:
-            normlized_pals_err = np.sqrt(counts) / norm
-
-        q = self._tikhonov_solution(
-            normlized_pals=normlized_pals,
-            response=response,
-            alpha=alpha,
-            maxiter=maxiter
-        )
+        q = self._tikhonov_solution(net_counts, response, alpha, maxiter)
 
         dtau = self.characteristic_time_grid[1] - self.characteristic_time_grid[0]
-        lifetime_q = response @ q * dtau
+        predicted = response @ q * dtau + background_value
 
-        mask = normlized_pals > 0
-
+        residuals = counts - predicted
         if error:
-            chi_sq = (normlized_pals[mask] - lifetime_q[mask]) ** 2 / normlized_pals_err[mask] ** 2
+            weights = np.maximum(counts, np.maximum(background_value ** 2 /12, 1))
+            chi_sq = residuals**2 / weights
         else:
-            chi_sq = (normlized_pals[mask] - lifetime_q[mask]) ** 2
+            chi_sq = residuals**2
 
-        return np.sum(chi_sq)
+        return np.abs(np.sum(chi_sq) / len(counts) - 1)
 
-    def invert(self, pals: PASLifetime,
-               maxiter=None,
-               initial_alpha=None,
-               method="Powell",
-               regulator_bounds=(1e-10, 1e-1),
-               minimization_ftol=1e-6,
-               error: bool = True) -> tuple[np.ndarray, object]:
+    def invert(self,
+               pals: PASLifetime,
+               background_value: float = 0.0,
+               maxiter: int = None,
+               initial_alpha: float = 1e-5,
+               method: str = "Powell",
+               regulator_bounds: tuple = (1e-10, 1e-1),
+               minimization_ftol: float = 1e-6,
+               error: bool = True,
+               svd_truncate: float = None) -> tuple[np.ndarray, object]:
         """
-        Invert a lifetime spectrum into a lifetime distribution q(τ).
-
-        Automatically selects the regularization parameter α by minimizing
-        the chi-squared residual in log space, then returns the final q(τ)
-        at the optimal α.
+        Invert a lifetime spectrum into a distribution q(τ).
 
         Parameters
         ----------
-        pals : PASLifetime
-            Measured lifetime spectrum with associated resolution function.
-        maxiter : int, optional
-            Max NNLS iterations. Defaults to 10 * n_tau.
-        initial_alpha : float, optional
-            Starting alpha for the optimizer. Defaults to 1e-5.
-        method : str
-            Scipy minimize method. Default "Powell".
-        regulator_bounds : tuple
-            (min, max) bounds for alpha search. Default (1e-10, 1e-1).
-        minimization_ftol : float
-            Convergence tolerance for the optimizer. Default 1e-6.
-        error : bool
-            If True, use Poisson-weighted chi-squared. Default True.
+        pals : measured lifetime spectrum with resolution function.
+        background_value : background level estimated from the flat tail
+        Default 0.0
+        maxiter : max NNLS iterations. Defaults to 10 * n_tau.
+        initial_alpha : starting alpha for optimizer. Default 1e-5.
+        method : scipy minimize method. Default "Powell".
+        regulator_bounds : (min, max) bounds for alpha search.
+        minimization_ftol : optimizer convergence tolerance.
+        error : if True, use Poisson-weighted chi-squared.
+        svd_truncate : if given, truncate SVD of response at this threshold.
+
         Returns
         -------
-        q : np.ndarray
-            Recovered lifetime distribution over characteristic_time_grid.
-        res : OptimizeResult
-            Full scipy optimization result, including optimal alpha via np.exp(res.x[0]).
+        q : lifetime distribution over characteristic_time_grid, in
+            counts·ns⁻¹ (not normalized — divide by q.sum()*dtau if needed).
+        res : scipy OptimizeResult. Optimal alpha = np.exp(res.x[0]).
         """
         if maxiter is None:
             maxiter = 10 * self.characteristic_time_grid.shape[0]
-        if initial_alpha is None:
-            initial_alpha = 1e-5
+
+        counts = pals.lifetime.counts
+        net_counts = counts - background_value  # allow negatives — no clipping bias
 
         response = _response_matrix(
             self.characteristic_time_grid,
             pals.lifetime.energy.values,
             pals.resolution
         )
+        if svd_truncate is not None:
+            Up, sp, Vtp = _svd_truncate(response, svd_truncate)
+            response = Up @ np.diag(sp) @ Vtp
 
         res = minimize(
-            self.chi_sq_log,
+            self._chi_sq,
             x0=[np.log(initial_alpha)],
-            args=(pals, response, maxiter, error),
+            args=(counts, net_counts, response, background_value, maxiter, error),
             bounds=[(np.log(regulator_bounds[0]), np.log(regulator_bounds[1]))],
             method=method,
             options={"ftol": minimization_ftol}
         )
 
-        alpha_opt = float(np.exp(res.x[0]))
-
-        norm = pals.lifetime.integrate('energy').item()
-        normlized_pals = pals.lifetime.counts / norm
-
-        q = self._tikhonov_solution(
-            normlized_pals=normlized_pals,
-            response=response,
-            alpha=alpha_opt,
-            maxiter=maxiter
-        )
+        alpha_opt = np.exp(res.x[0])
+        q = self._tikhonov_solution(net_counts, response, alpha_opt, maxiter)
 
         return q, res

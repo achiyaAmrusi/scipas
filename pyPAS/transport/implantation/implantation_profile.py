@@ -4,7 +4,7 @@ from warnings import warn
 from scipy.integrate import cumtrapz
 from scipy.constants import centi, micro, nano
 import xarray as xr
-from pyPAS.transport.positron_implantation_profile.utils import  get_layer_indices
+from pyPAS.transport.implantation.utils import  get_layer_indices
 
 def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
     """

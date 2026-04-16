@@ -9,18 +9,18 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
                          electric_field: xr.DataArray = None,
                          num_of_mesh_cells=1000):
     """
-    The solution for positron positron_implantation_profile boundary problem for given materials and positron energy.
+    The solution for positron implantation boundary problem for given materials and positron energy.
     The solution method here uses scipy solve_bvp function in order to solve the self-consistent problem.
     because of its self-consisting nature this method is slow comparable with the matrix solution.
 
     Parameters
     ----------
-    - positron_implantation_profile: xarray.DataArray
+    - implantation: xarray.DataArray
     A function of the thermal positrons per micron in the materials. see also ghosh_profile, makhov_profile
     - materials: Sample
-    The materials for which the positron_implantation_profile is calculated,
+    The materials for which the implantation is calculated,
       it is advised to define the last layer to be
-        at least 3 mean free path from the end of the positron_implantation_profile (or where the implantation is negligible).
+        at least 3 mean free path from the end of the implantation (or where the implantation is negligible).
     - electric_field: xarray.DataArray
     The electric field value if it exists,
     If None, taken to be 0
@@ -99,7 +99,7 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
     # The mesh array
     mesh = np.linspace(0, sample.sample_length(), num_of_mesh_cells)
 
-    # The initial guess of the positron positron_implantation_profile is the solution from the fast solve,
+    # The initial guess of the positron implantation is the solution from the fast solve,
     # we can see in scipy if it converge
     initial_guess = np.array([positron_implantation_profile.interp(x=x) for x in mesh])
     initial_guess = xr.DataArray(np.nan_to_num(initial_guess), coords={'x': mesh})

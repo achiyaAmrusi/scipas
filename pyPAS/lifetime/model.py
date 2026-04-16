@@ -6,7 +6,7 @@ from typing import Sequence
 @dataclass
 class LifetimeModel:
     """
-    Represents a discrete multi-component lifetime materials.
+    Represents a discrete multi-component fit materials.
 
     lifetimes: decay constants (tau_i)
     intensities: relative intensities (I_i)
@@ -31,7 +31,7 @@ class LifetimeModel:
             raise ValueError("intensities must be a 1D sequence")
 
         if len(self.lifetimes) == 0:
-            raise ValueError("At least one lifetime component is required")
+            raise ValueError("At least one fit component is required")
 
         if len(self.lifetimes) != len(self.intensities):
             raise ValueError(

@@ -4,12 +4,12 @@ import pandas as pd
 
 def ghosh_material_parameters():
     """
-    Function to get the parameters for the positron implantation positron_implantation_profile fit in various materials.
+    Function to get the parameters for the positron implantation implantation fit in various materials.
      The fit is Gosh fit which is described in [1]
     Returns
     -------
     pd.DataFrame
-    The parameters of Gosh fit for the positrons implantation positron_implantation_profile in various materials
+    The parameters of Gosh fit for the positrons implantation implantation in various materials
 
     Reference
     ---------
@@ -29,12 +29,12 @@ def ghosh_material_parameters():
 
 def makhov_material_parameters():
     """
-    Function to get the parameters for the positron implantation positron_implantation_profile fit in various materials.
+    Function to get the parameters for the positron implantation implantation fit in various materials.
      The fit is Makhov fit which is described in [1]
     Returns
     -------
     pd.DataFrame
-    The parameters of Makhov fit for the positrons implantation positron_implantation_profile in various materials
+    The parameters of Makhov fit for the positrons implantation implantation in various materials
 
     Reference
     ---------

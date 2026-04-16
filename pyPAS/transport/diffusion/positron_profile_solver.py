@@ -15,7 +15,7 @@ def profile_solver(positron_implantation_profile: xr.DataArray,
 
     Parameters
     ----------
-    - positron_implantation_profile: xarray.DataArray
+    - implantation: xarray.DataArray
     Thermal positron implantation profile [positron/length] in the materials.
     Note that in the code the profile is linearly interpolated into the mesh points
      See ghosh_profile, makhov_profile

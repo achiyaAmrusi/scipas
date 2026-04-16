@@ -11,7 +11,7 @@ class TimeResolution(ABC):
     TimeResolution represents the detector or measurement system response function
     that distorts the ideal physical time spectrum before observation.
 
-    In positron lifetime spectroscopy, the measured spectrum is typically modeled as:
+    In positron fit spectroscopy, the measured spectrum is typically modeled as:
 
         Measured_signal(t) = Convolution[ True_physics_signal(t), resolution(t') ]
 
@@ -204,8 +204,8 @@ class MultiGaussianRF(TimeResolution):
 
 class PASLifetime:
     """"
-    Represents a lifetime spectrum.
-    This class is the basis for the lifetime analysis.
+    Represents a fit spectrum.
+    This class is the basis for the fit analysis.
     """
 
     def __init__(self, lifetime: Spectrum, resolution: TimeResolution):

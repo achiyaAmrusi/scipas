@@ -3,7 +3,6 @@ from pyPAS.lifetime.model import LifetimeModel
 from pyPAS.core.lt import TimeResolution, PASLifetime
 from pyspectrum import Spectrum
 
-
 def generate_analytical_lt_spectrum(
     time: np.ndarray,
     model: LifetimeModel,
@@ -11,7 +10,7 @@ def generate_analytical_lt_spectrum(
     background_fraction: float
 ) -> PASLifetime:
     """
-    Generate a normalized positron lifetime spectrum on given time grid
+    Generate a normalized positron fit spectrum on given time grid
     using discrete exponential model and resolution convolution.
     """
 
@@ -22,7 +21,7 @@ def generate_analytical_lt_spectrum(
     if np.any(np.diff(time) <= 0):
         raise ValueError("Time axis must be strictly increasing")
 
-    # ---- Generate ideal decay ----
+    # ---- Generate analytical decay ----
     decay = np.zeros_like(time, dtype=float)
     lifetime = np.vstack(model.lifetimes)
     intensity = np.vstack(model.intensities)
@@ -46,7 +45,6 @@ def generate_analytical_lt_spectrum(
         channels=np.arange(len(time)),
         energy_calibration_poly=time_calib
     )
-
     return PASLifetime(lifetime=spectrum, resolution=resolution)
 
 def generate_random_lt_spectrum(
@@ -57,7 +55,7 @@ def generate_random_lt_spectrum(
         num_events = int
 ) -> PASLifetime:
     """
-    Generate a normalized positron lifetime spectrum on given time grid
+    Generate a normalized positron fit spectrum on given time grid
     using discrete exponential model and resolution convolution.
     """
     dt = time[1] - time[0]
@@ -71,9 +69,8 @@ def generate_random_lt_spectrum(
     dt = time[1] - time[0]
     time_calib = np.poly1d([dt, time[0]])
 
-    normlized_dist = measured/num_events/dt
     spectrum = Spectrum(
-        counts=normlized_dist,
+        counts=measured,
         channels=np.arange(len(time)),
         energy_calibration_poly=time_calib
     )
