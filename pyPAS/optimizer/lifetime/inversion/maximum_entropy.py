@@ -176,12 +176,12 @@ class MaximalEntropyInversion(LifetimeInvert):
         if maxiter is None:
             maxiter = 10 * n_tau
         if prior_model is None:
-            prior_model = np.ones(n_tau) / n_tau
+            prior_model = np.ones(n_tau) / np.trapz(np.ones(n_tau) , self.characteristic_time_grid)
 
         # Background subtraction then normalization — bg excluded from norm
         counts = pals.lifetime.counts
         net_counts = counts - bg_est
-        norm = net_counts.sum()
+        norm = np.trapz(net_counts, pals.lifetime.energy)
         data = net_counts / norm
         data_err = np.sqrt(np.maximum(counts, 1)) / norm  # Poisson error on raw counts
 
@@ -201,5 +201,4 @@ class MaximalEntropyInversion(LifetimeInvert):
             maxiter=maxiter
         )
 
-        f_hat = f_hat / np.trapz(f_hat, self.characteristic_time_grid)
         return alpha_opt, f_hat
