@@ -71,28 +71,50 @@ class TimeResolution(ABC):
         """
         Numerically convolve physical signal with instrument response function.
 
-        This provides the default forward-model distortion operation.
+        np.convolve(signal, irf, mode="full") produces an output of length
+        2*len(t)-1, where output index k corresponds to time:
+
+            t_out[k] = t[0] + t[0] + k*dt = 2*t[0] + k*dt
+
+        Since both signal and irf are evaluated on the same time grid t,
+        starting at t[0] = t_min < 0.
+
+        We want to extract the window corresponding to the original time grid
+        [t_min, t_max], which starts at index k where:
+
+            2*t_min + k*dt = t_min  =>  k = -t_min/dt = |t_min|/dt
+
+        This is exactly zero_point_index — the number of samples before t=0
+        in the time array. The slicing:
+
+            [zero_point_index : len(t) + zero_point_index]
+
+        therefore correctly maps the convolution output back onto t,
+        independent of IRF shape or centering.
+
+        The * dt factor converts the discrete sum into a proper approximation
+        of the continuous convolution integral.
 
         Parameters
         ----------
         signal : np.ndarray
             Ideal physical signal before detector response distortion.
-
         t : np.ndarray
             Time grid corresponding to signal discretization.
 
         Returns
         -------
         np.ndarray
-            Convolved signal.
+            Convolved signal on the same time grid t, scaled by dt.
 
         Notes
         -----
-        - Assumes uniform time spacing.
-        - Output is truncated to match input signal length.
+        - Assumes uniform time spacing dt = t[1] - t[0].
+        - t must span negative to positive values with t[0] < 0 < t[-1].
         """
         irf = self.evaluate(t)
         dt = t[1] - t[0]
+
         zero_point_index = np.where(t>0)[0][0]
 
         return np.convolve(signal, irf, mode="full")[zero_point_index:len(t)+zero_point_index] * dt

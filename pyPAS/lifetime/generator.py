@@ -6,9 +6,7 @@ from pyspectrum import Spectrum
 def generate_analytical_lt_spectrum(
     time: np.ndarray,
     model: LifetimeModel,
-    resolution: TimeResolution,
-    background_fraction: float
-) -> PASLifetime:
+    resolution: TimeResolution) -> PASLifetime:
     """
     Generate a normalized positron fit spectrum on given time grid
     using discrete exponential model and resolution convolution.
@@ -31,10 +29,7 @@ def generate_analytical_lt_spectrum(
     decay = resolution.convolve(decay, time)
 
     #----- Normalize the Decay to Background ---
-    decay = (1-background_fraction) / np.trapz(decay, time) * decay
-    # ---- Constant Background ----
-    background = background_fraction/(time[-1] - time[0])
-    decay =  decay + background
+    decay = decay / np.trapz(decay, time)
 
     # ---- Time calibration (linear) ----
     dt = time[1] - time[0]
@@ -51,7 +46,6 @@ def generate_random_lt_spectrum(
         time: np.ndarray,
         model: LifetimeModel,
         resolution: TimeResolution,
-        background_fraction: float,
         num_events = int
 ) -> PASLifetime:
     """
@@ -61,8 +55,7 @@ def generate_random_lt_spectrum(
     dt = time[1] - time[0]
     analytical = generate_analytical_lt_spectrum(time=time,
                                                  model=model,
-                                                 resolution=resolution,
-                                                 background_fraction=background_fraction)
+                                                 resolution=resolution)
     measured = np.random.poisson(analytical.lifetime * dt * num_events).astype(float)
 
     # ---- Time calibration (linear) ----

@@ -18,6 +18,11 @@ class TikhonovRegularization(LifetimeInvert):
     difference operator penalizing curvature.
 
     Alpha is selected by minimizing |χ²/N - 1| (discrepancy principle).
+    Note:
+        This method is very sensitive to small shifts in the spectrum.
+         If the fit is not well and the tail deviats from the measurment,
+          you can move the spectrum half a time bin and it might fit correctly.
+          The reason is yet to be found.
     """
 
     def _tikhonov_solution(self,
@@ -44,10 +49,9 @@ class TikhonovRegularization(LifetimeInvert):
         q : lifetime distribution over characteristic_time_grid.
         """
         n_tau = len(self.characteristic_time_grid)
-        dtau = self.characteristic_time_grid[1] - self.characteristic_time_grid[0]
         D2 = (np.eye(n_tau, k=0) - 2 * np.eye(n_tau, k=1) + np.eye(n_tau, k=2))[:n_tau - 2]
 
-        A_aug = np.vstack([response * dtau, np.sqrt(alpha) * D2])
+        A_aug = np.vstack([response, np.sqrt(alpha) * D2])
         b_aug = np.concatenate([net_counts, np.zeros(n_tau - 2)])
 
         q, _ = nnls(A_aug, b_aug, maxiter=maxiter)
@@ -76,12 +80,11 @@ class TikhonovRegularization(LifetimeInvert):
         maxiter : max NNLS iterations.
         error : if True, use Poisson-weighted chi-squared.
         """
-        dtau = self.characteristic_time_grid[1] - self.characteristic_time_grid[0]
         # solve for q unsing nnls
-        alpha = np.clip(np.exp(log_alpha[0]), 1e-12, 1e-1)
+        alpha = np.exp(log_alpha[0])
         q = self._tikhonov_solution(data, response, alpha, maxiter)
 
-        predicted = response @ q * dtau
+        predicted = response @ q
 
         residuals = data - predicted
         chi_sq = residuals ** 2 / data_err **2
@@ -91,7 +94,6 @@ class TikhonovRegularization(LifetimeInvert):
     def invert(self,
                pals: PASLifetime,
                bg_est: float = 0.0,
-               noise_level: float = 1e-3,
                maxiter: int = None,
                initial_alpha: float = 1e-5,
                method: str = "Powell",
@@ -135,19 +137,24 @@ class TikhonovRegularization(LifetimeInvert):
             pals.resolution
         )
 
-#        Up, sp, Vtp = _svd_truncate(response, noise_level)
-#        truncate_response = Up @ np.diag(sp) @ Vtp
+        # correct the response to trapz integration
+        dtau = self.characteristic_time_grid[1] - self.characteristic_time_grid[0]
+
+        w = np.ones_like(self.characteristic_time_grid)
+        w[0] *= 0.5
+        w[-1] *= 0.5
+        weighted_response = response * w[None,:] * dtau
 
         res = minimize(
             self._chi_sq,
             x0=[np.log(initial_alpha)],
-            args=(data, data_err, response, maxiter),
+            args=(data, data_err, weighted_response, maxiter),
             bounds=[(np.log(regulator_bounds[0]), np.log(regulator_bounds[1]))],
             method=method,
             options={"ftol": minimization_ftol}
         )
 
         alpha_opt = np.exp(res.x[0])
-        q = self._tikhonov_solution(data, response, alpha_opt, maxiter)
+        q = self._tikhonov_solution(data, weighted_response, alpha_opt, maxiter)
 
         return q, res

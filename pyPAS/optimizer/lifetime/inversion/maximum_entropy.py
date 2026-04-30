@@ -22,6 +22,9 @@ class MaximalEntropyInversion(LifetimeInvert):
     jointly in log-alpha space via Powell.
 
     Reference: Bryan, R.K. (1990). Maximum Entropy and Bayesian Methods, 221-232.
+
+    Note: the result distribution is normalized using np.trapz and not rectangular sum.
+    This can cause the normalization response@f(tau) to be off 1 due to boundry singularities.
     """
 
     def _entropy(self, f: np.ndarray, prior: np.ndarray) -> float:
@@ -185,10 +188,12 @@ class MaximalEntropyInversion(LifetimeInvert):
         data = net_counts / norm
         data_err = np.sqrt(np.maximum(counts, 1)) / norm  # Poisson error on raw counts
 
-        # Response matrix with t0 correction, then truncated SVD
-        time_values = pals.lifetime.energy.values
-        response = _response_matrix(self.characteristic_time_grid, time_values, pals.resolution)
-        V, sigma, Ut = _svd_truncate(response * dtau, noise_level)
+        # Response matrix with truncated SVD
+        response = _response_matrix(self.characteristic_time_grid, pals.lifetime.energy.values, pals.resolution)
+        w = np.ones(n_tau) * dtau
+        w[0] *= 0.5
+        w[-1] *= 0.5
+        V, sigma, Ut = _svd_truncate(response * w[None, :], noise_level)
         U = Ut.T  # (N_tau × s) — Bryan's U, tau space
 
         alpha_opt, f_hat = self._optimize(

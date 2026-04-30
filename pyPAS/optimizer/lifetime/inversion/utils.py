@@ -13,8 +13,7 @@ def _response_matrix(tau_grid: np.ndarray, time_grid: np.ndarray, resolution: Ti
                                       intensities=[1])
         response_mat[j, :] = generate_analytical_lt_spectrum(time_grid,
                                                              model=impulse_model,
-                                                             resolution=resolution,
-                                                             background_fraction=0).lifetime
+                                                             resolution=resolution).lifetime
     return response_mat.T
 
 def _svd_truncate(response: np.ndarray, noise_level: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
