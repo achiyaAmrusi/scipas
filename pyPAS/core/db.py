@@ -1,51 +1,50 @@
 import numpy as np
-import pandas as pd
 import xarray as xr
 from uncertainties import ufloat, nominal_value
-from pyspectrum import Peak, Spectrum, FindPeaksDomain, Convolution, gaussian_2_dev
-from warnings import warn
 
-ELECTRON_REST_MASS = 511
+from pyspectrum.core import Domain, Spectrum
+from pyspectrum.calibration import AxisCalibration
+from pyspectrum.identification import SNRFinder, Convolution, gaussian_2_dev
+from pyspectrum.domain_analysis.single_peak import center_estimator, sum_under
+from pyPAS.core.const import ELECTRON_REST_MASS_KEV
 
-
-class PASdb(Peak):
+class PASdb(Domain):
     """
       Represents a Doppler broadening spectrum centered around the 511 keV annihilation peak.
 
-      This class extends `Peak` from `pyspectrum` and adds tools for calculating Doppler
+      This class extends `Domain` from `pyspectrum` and adds tools for calculating Doppler
       broadening lineshape parameters (S and W), using uncertainty propagation via the
       `uncertainties` package.
 
       Parameters
       ----------
-      peak_xarray : xr.DataArray
-          The spectrum peak data as an xarray DataArray (with coordinates like 'channel' and values as counts).
-      ubackground_l : ufloat, optional
-          Background estimate from the left side of the peak (default: ufloat(0, 1)).
-      ubackground_r : ufloat, optional
-          Background estimate from the right side of the peak (default: ufloat(0, 1)).
+      spectrum: Spectrum
+        The full spectrum with the annihilation peak
+      start: int
+        The start index of the annihilation peak
+      stop: int
+       The stop index of the annihilation peak
       centralize_peak : bool
-      to centrlize the Peak coordinates to 511 [keV] in the peak center using the Peak estimator
-       (This method uses the maximal channel as the center, for better calibration use Peeak methods)
+      to centrlize the Peak coordinates to 511 [keV] in the peak center using the center estimator
+      from pyspectrum.domain_analysis
+
+
       Attributes
       ----------
-      peak : xr.DataArray
-          The peak data (counts vs. energy or channel).
-      height_left : ufloat
-          Estimated background on the left side of the peak.
-      height_right : ufloat
-          Estimated background on the right side of the peak.
-      estimated_center : float
-          Estimated centroid of the annihilation peak.
-      estimated_resolution : float
-          Estimated resolution (FWHM) of the annihilation peak.
+      data : xr.DataArray
+          Domain counts as an xarray DataArray, with background
+          subtracted if provided.
+      data_with_errors : xr.DataArray
+          Domain counts with uncertainty via the uncertainties library.
+      background : np.ndarray or None
+          The background array, if set.
+      indices : np.ndarray
+          Array of spectrum indices covered by this domain.
 
       Methods
       -------
       centralize_annihilation_peak()
-        centralize the annihilation peak around 511 [KeV]
-      sum_with_edge_correction(e1: float, e2: float) -> float
-          Integrate counts in a given interval with edge correction for partial bins.
+        shift the axis calibration so it's centralize the annihilation peak around 511 [KeV]
 
       s_parameter_calculation(energy_domain_total, energy_domain_s) -> ufloat
           Calculate the S parameter, defined as the ratio of counts in the central peak region
@@ -55,90 +54,81 @@ class PASdb(Peak):
           Calculate the W parameter, defined as the ratio of counts in the peak wings
           to the total counts across the full peak range.
 
-      from_dataframe(cls, spectrum_data_frame, energy_calibration_poly, fwhm_calibration=None) -> PASdb
-          Create a PASdb object from a pandas DataFrame containing 'channel' and 'counts' columns.
-
       from_spectrum(cls, spectrum: Spectrum) -> PASdb
           Create a PASdb object from a `Spectrum` instance by identifying the 511 keV peak.
 
-      from_file(cls, spectrum_file_path, energy_calibration_poly, fwhm_calibration, sep='\\t', **kwargs) -> PASdb
-          Create a PASdb object by loading data from a file (if implemented).
+      from_dataframe(cls, spectrum_data_frame, energy_calibration_poly, fwhm_calibration=None) -> PASdb
+          Create a PASdb object from a pandas DataFrame containing 'channel' and 'counts' columns.
+
       """
 
-    def __init__(self, peak_xarray: xr.DataArray, ubackground_l=ufloat(0, 1), ubackground_r=ufloat(0, 1)):
+    def __init__(self, spectrum: Spectrum,
+                 start: int,
+                 stop: int,
+                 background: np.ndarray=None,
+                 centralize_peak: bool=True,
+                 center_value: float=ELECTRON_REST_MASS_KEV):
         """
-        Inherit constructor from Peak.
+        Inherit constructor from Domain
+         If centralize_peak centrlize the calibration is adjusted so peak center is on 511 KeV.
+        Parameters
+        ----------
+        spectrum : Spectrum
+            The full spectrum containing the annihilation peak.
+        start : int
+            Start index of the annihilation peak domain.
+        stop : int
+            Stop index of the annihilation peak domain.
+        background : np.ndarray, optional
+            Background array to subtract.
+        centralize_peak : bool
+            If True, shifts the axis calibration so the peak center aligns
+            with electron_rest_mass_value.
+        center_value  : float
+            The axis value the peak center should be mapped to after centralization.
+            Defaults to the electron rest mass energy in keV (510.99895 keV).
+            For example, user can use 0.0 for CDB or momentum spectra which are naturally centered around zero.
         """
-        super().__init__(peak_xarray, ubackground_l, ubackground_r)
+        super().__init__(spectrum=spectrum, start=start, stop=stop, background=background)
+        if centralize_peak:
+            self.recenter(center_value)
 
-    def centralize_annihilation_peak(self):
+    def recenter(self, center_value: float=ELECTRON_REST_MASS_KEV):
         """
-        Centralize the annihilation peak around 511 keV.
+        Shift the axis calibration so the annihilation peak center aligns with
+        the electron rest mass energy.
 
-        This method shifts the x-axis (channel/energy coordinate) of the peak
-        such that the peak center aligns with the positron rest mass energy (511 keV).
-        """
-        # Centralize the peak
-        center = self.first_moment_method_center()
-        # Subtract center value from coordinate
-        new_coords = self._xr_peak.coords['channel'] - (nominal_value(center) - ELECTRON_REST_MASS)
-        peak_xarray = self._xr_peak.copy()
-        peak_xarray.coords['channel'] = new_coords
-        self._xr_peak = peak_xarray
+        The peak center is estimated using the weighted centroid method from
+        ``pyspectrum.domain_analysis.single_peak.center_estimator``. The axis
+        calibration of the parent Spectrum is then shifted so that the estimated
+        center maps to ``electron_rest_mass_value``.
 
-    def sum_with_edge_correction(self, e1: float, e2: float) -> float:
-        """
-        Sum counts over an energy/channel range [e1, e2] in a binned xarray DataArray,
-        accounting for partial bin contributions at the edges.
-
-        This function performs an integration of the counts in `da` over the interval [e1, e2]
-        using the following steps:
-          - Full bins within [e1, e2] are fully included.
-          - The left and right edge bins are partially included based on the fraction of their
-            width that falls inside the interval.
-
-        It assumes:
-          - `da` has a coordinate (e.g. "channel") that represents bin centers.
-          - Bins are uniformly spaced.
-          - `da` is 1D with bin centers as the coordinate.
+        Note: this modifies the axis calibration of the parent Spectrum in-place,
+        which affects all domains derived from it.
 
         Parameters
         ----------
-        da : xr.DataArray
-            The spectrum to integrate, indexed by a coordinate such as 'channel'.
-        e1 : float
-            The lower bound of the energy/channel domain.
-        e2 : float
-            The upper bound of the energy/channel domain.
+        center_value  : float
+            The axis value the peak center should be mapped to after centralization.
+            Defaults to the electron rest mass energy in keV (510.99895 keV).
+            For example, user can use 0.0 for CDB or momentum spectra which are naturally centered around zero.
 
-        Returns
-        -------
-        float
-            The total integrated counts over the interval [e1, e2],
-            including edge corrections for partial bins.
+        Warns
+        -----
+        UserWarning
+            If the peak center estimation is unreliable due to a noisy or
+            asymmetric peak — propagated from ``center_estimator``.
         """
-        peak = self.subtract_background()
+        # calculates the peak center
+        center = nominal_value(center_estimator(self))
+        # recalibrate
+        shift = center - center_value
+        old_calib = self.spectrum.axis_calib  # capture current calibration
+        new_axis_calibration = AxisCalibration(
+            lambda e: old_calib.apply(e) - shift,  # closes over old_calib, not self.spectrum.axis_calib
+            name=self.spectrum.axis_name)
+        self.spectrum.set_axis_calibration(new_axis_calibration)
 
-        if e1 > e2:
-            raise ValueError("e1 must be less than e2")
-
-        # Slice bins that are fully inside the energy domain
-        # Get bin width from existing bins (assumed uniform here)
-        bin_width = (peak.channel[1] - peak.channel[0]).item()
-        bins = peak.sel(channel=slice(e1 - bin_width, e2))
-
-        # Calculate fractional contributions at edges
-        left_frac = (bins.channel[1].item() - e1) / bin_width
-        left_val = bins[0].item()
-        left_correction = left_val * left_frac
-
-        right_frac = (e2 - bins.channel[-1].item()) / bin_width
-        right_val = bins[-1].item()
-        right_correction = right_val * right_frac
-
-        counts = bins[1:-1].sum().item() + left_correction + right_correction
-
-        return counts
 
     def s_parameter_calculation(self, energy_domain_total, energy_domain_s):
         """
@@ -157,12 +147,11 @@ class PASdb(Peak):
         ufloat
          The calculated s parameter with associated uncertainty.
         """
-        bin_width = (self['channel'][1] - self['channel'][0]).item()
         # The S line part
-        a = self.sum_with_edge_correction(e1=energy_domain_s[0], e2=energy_domain_s[1])
+        a = sum_under(single_peak_domain=self, left_edge=energy_domain_s[0], right_edge=energy_domain_s[1])
         # The rest of the peak
-        b = self.sum_with_edge_correction(e1=energy_domain_total[0], e2=energy_domain_s[0])
-        c = self.sum_with_edge_correction(e1=energy_domain_s[1], e2=energy_domain_total[1])
+        b = sum_under(single_peak_domain=self, left_edge=energy_domain_total[0], right_edge=energy_domain_s[0])
+        c = sum_under(single_peak_domain=self, left_edge=energy_domain_s[1], right_edge=energy_domain_total[1])
         return a / (a + b + c)
 
     def w_parameter_calculation(self, energy_domain_total, energy_domain_w_left, energy_domain_w_right):
@@ -187,7 +176,7 @@ class PASdb(Peak):
          The calculated s parameter with associated uncertainty.
         """
 
-        bin_width = (self['channel'][1] - self['channel'][0]).item()
+        bin_width = (self.spectrum.axis[1]-self.spectrum.axis[0])
 
         e_1_l = energy_domain_w_left[0]
         e_2_l = energy_domain_w_left[1]
@@ -203,14 +192,14 @@ class PASdb(Peak):
             raise  ValueError('There has been a problem with the integration boundaries')
 
         # The W line part
-        w1 = self.sum_with_edge_correction(e1=e_1_l, e2=e_2_l)
-        w2 = self.sum_with_edge_correction(e1=e_1_r, e2=e_2_r)
+        w1 = sum_under(single_peak_domain=self, left_edge=e_1_l, right_edge=e_2_l)
+        w2 = sum_under(single_peak_domain=self, left_edge=e_1_r, right_edge=e_2_r)
 
         # The rest of the peak (Also check that the boundaries are not too close and if so make them the same)
 
         # left
         if np.abs(e_1_peak-e_1_l) > bin_width:
-            d1 = self.sum_with_edge_correction(e1=e_1_peak, e2=e_1_l)
+            d1 = sum_under(single_peak_domain=self, left_edge=e_1_peak, right_edge=e_1_l)
         elif np.abs(e_1_peak-e_1_l) == 0:
             d1 = 0
         else:
@@ -218,7 +207,7 @@ class PASdb(Peak):
                              "To minimize computational errors, consider aligning the boundaries or increasing their separation.")
         # middle
         if np.abs(e_2_l-e_1_r) > bin_width:
-            d2 = self.sum_with_edge_correction(e1=e_2_l, e2=e_1_r)
+            d2 = sum_under(single_peak_domain=self, left_edge=e_2_l, right_edge=e_1_r)
         elif np.abs(e_2_l - e_1_r) == 0:
             d2 = 0
         else:
@@ -226,7 +215,7 @@ class PASdb(Peak):
                              "To minimize computational errors, consider aligning the boundaries or increasing their separation.")
         # right
         if np.abs(e_1_r-e_2_peak) > bin_width:
-            d3 = self.sum_with_edge_correction(e1=e_1_r, e2=e_2_peak)
+            d3 = sum_under(single_peak_domain=self, left_edge=e_1_r, right_edge=e_2_peak)
         elif np.abs(e_1_r - e_2_peak) == 0:
             d3 = 0
         else:
@@ -235,56 +224,95 @@ class PASdb(Peak):
 
         return (w1+w2)/(w1+w2+d1+d2+d3)
 
-
     @classmethod
-    def from_dataframe(cls, spectrum_data_frame: pd.DataFrame,
-                       energy_calibration_poly=np.poly1d([1, 0]), fwhm_calibration=None):
-        """
-        load spectrum from a dataframe which has 2 columns
-        first column is the channel and the second is counts
-        function return Spectrum
-
-        Parameters
-        ----------
-        spectrum_data_frame: pd.DataFrame
-         spectrum in form of a dataframe such that the column are -  'channel', 'counts'
-        energy_calibration_poly: numpy.poly1d([a, b])
-        the energy calibration of the detector
-        fwhm_calibration: Callable
-        a function that given energy/channel(first raw in file) returns the fwhm
-
-        Returns
-        -------
-        PASdb
-        core spectrum from the file in PASdb class .
-        """
-        # Load the pyspectrum file in form of DataFrame
-        spectrum = Spectrum.from_dataframe(spectrum_data_frame, energy_calibration_poly=energy_calibration_poly,
-                                           fwhm_calibration=fwhm_calibration)
-        estimated_fwhm_ch = lambda ch: fwhm_calibration(energy_calibration_poly(ch)) / energy_calibration_poly[1]
-        convolution = Convolution(estimated_fwhm_ch, gaussian_2_dev)
-        find_peaks = FindPeaksDomain(spectrum, convolution)
-        peak = find_peaks.to_peak(ELECTRON_REST_MASS)
-        return PASdb(peak._xr_peak, peak.height_left, peak.height_right)
-
-    @classmethod
-    def from_spectrum(cls, spectrum: Spectrum):
+    def from_domain(cls, domain: Domain,
+                    centralize_peak: bool = True,
+                    center_value : float = ELECTRON_REST_MASS_KEV):
         """
         load spectrum, look for the 511 peak and return it
 
         Parameters
         ----------
-        spectrum: pd.DataFrame
-         spectrum object with annhilation peak
+        domain: Domain
+         annhilation peak domain
+        centralize_peak : bool
+            If True, shifts the axis calibration so the peak center aligns
+            with electron_rest_mass_value.
+        center_value  : float
+            The axis value the peak center should be mapped to after centralization.
+            Defaults to the electron rest mass energy in keV (510.99895 keV).
+            For example, user can use 0.0 for CDB or momentum spectra which are naturally centered around zero.
 
         Returns
         -------
         PASdb
         core spectrum from the file in PASdb class .
         """
+        return PASdb(domain.spectrum,
+                     domain.start,
+                     domain.stop,
+                     domain.background,
+                     centralize_peak=centralize_peak,
+                     center_value=center_value)
+
+    @classmethod
+    def from_spectrum(cls, spectrum: Spectrum,
+                      window_fwhm: float = 3.,
+                      n_sigma_signal_threshold=5,
+                      n_sigma_bg_threshold=2.0,
+                      persistence_factor=0.5,
+                      centralize_peak: bool = True):
+        """
+        Identify the 511 keV annihilation peak in a spectrum and return it as a PASdb domain.
+
+        The peak is located automatically using the SNR-based peak finder
+        (``pyspectrum.identification.SNRFinder``) with a Gaussian second derivative
+        convolution kernel. The spectrum must have a resolution calibration set,
+        as it is used to scale the convolution window.
+
+        If ``centralize_peak`` is True, the axis calibration of the parent spectrum
+        is shifted in-place so the peak center aligns with the electron rest mass energy.
+
+        Parameters
+        ----------
+        spectrum : Spectrum
+            Spectrum object containing the 511 keV annihilation peak.
+            Must have a resolution calibration set.
+        window_fwhm : float
+            Width of the convolution window in units of the local FWHM.
+            Larger values smooth more aggressively. Default is 3.
+        n_sigma_signal_threshold : float
+            Number of standard deviations above background required to
+            identify a peak. Higher values reduce false positives. Default is 5.
+        n_sigma_bg_threshold : float
+            Number of standard deviations used to define the background level.
+            Default is 2.0.
+        persistence_factor : float
+            Controls how persistent a peak must be across scales to be accepted.
+            Default is 0.5.
+        centralize_peak : bool
+            If True, shifts the spectrum axis calibration in-place so the
+            detected peak center aligns with the electron rest mass energy.
+            Default is True.
+
+        Returns
+        -------
+        PASdb
+            A PASdb domain centered on the identified 511 keV annihilation peak.
+
+        Raises
+        ------
+        ValueError
+            If no peak is found near the electron rest mass energy in the spectrum.
+        """
         # Load the pyspectrum file in form of DataFrame
 
-        convolution = Convolution(spectrum.fwhm_calibration, gaussian_2_dev)
-        find_peaks = FindPeaksDomain(spectrum, convolution, n_sigma_threshold=5)
-        peak = find_peaks.to_peak(ELECTRON_REST_MASS)
-        return PASdb(peak._xr_peak, peak.height_left, peak.height_right)
+        convolution = Convolution(spectrum.resolution_calib.apply,
+                                  gaussian_2_dev,
+                                  window_fwhm=window_fwhm)
+        find_peaks = SNRFinder(convolution=convolution,
+                               n_sigma_signal_threshold=n_sigma_signal_threshold,
+                               n_sigma_bg_threshold=n_sigma_bg_threshold,
+                               persistence_factor=persistence_factor)
+        domain = find_peaks.domain(spectrum, ELECTRON_REST_MASS_KEV)
+        return PASdb.from_domain(domain, centralize_peak=centralize_peak)
