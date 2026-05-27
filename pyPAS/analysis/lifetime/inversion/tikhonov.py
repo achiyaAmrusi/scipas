@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.optimize import nnls, minimize
-from pyPAS.core.lt import PASLifetime
-from pyPAS.optimizer.lifetime.inversion import LifetimeInvert
-from pyPAS.optimizer.lifetime.inversion.utils import _response_matrix, _svd_truncate
+from pyPAS.core.lifetime import PASLifetime
+from pyPAS.analysis.lifetime.inversion import LifetimeInvert
+from pyPAS.analysis.lifetime.inversion.utils import _response_matrix, _svd_truncate
 
 
 class TikhonovRegularization(LifetimeInvert):
@@ -108,10 +108,10 @@ class TikhonovRegularization(LifetimeInvert):
         bg_est : background level estimated from the flat tail
         Default 0.0
         maxiter : max NNLS iterations. Defaults to 10 * n_tau.
-        initial_alpha : starting alpha for optimizer. Default 1e-5.
+        initial_alpha : starting alpha for analysis. Default 1e-5.
         method : scipy minimize method. Default "Powell".
         regulator_bounds : (min, max) bounds for alpha search.
-        minimization_ftol : optimizer convergence tolerance.
+        minimization_ftol : analysis convergence tolerance.
         error : if True, use Poisson-weighted chi-squared.
         svd_truncate : if given, truncate SVD of response at this threshold.
 

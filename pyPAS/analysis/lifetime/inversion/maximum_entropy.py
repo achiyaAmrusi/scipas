@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.optimize import minimize
-from pyPAS.core.lt import PASLifetime
-from pyPAS.optimizer.lifetime.inversion import LifetimeInvert
-from pyPAS.optimizer.lifetime.inversion.utils import _response_matrix, _svd_truncate
+from pyPAS.core.lifetime import PASLifetime
+from pyPAS.analysis.lifetime.inversion import LifetimeInvert
+from pyPAS.analysis.lifetime.inversion.utils import _response_matrix, _svd_truncate
 
 
 class MaximalEntropyInversion(LifetimeInvert):
@@ -162,7 +162,7 @@ class MaximalEntropyInversion(LifetimeInvert):
                             Applied before building the response matrix. Default 0.
         noise_level       : SVD truncation threshold relative to the largest
                             singular value. Controls rank s. Default 1e-3.
-        initial_alpha     : starting alpha for the optimizer. Default 1e-3.
+        initial_alpha     : starting alpha for the analysis. Default 1e-3.
         alpha_bounds      : (min, max) search range for alpha. Default (1e-10, 1e2).
         prior_model       : prior over tau grid. Default flat (uniform).
         minimization_ftol : Powell convergence tolerance. Default 1e-6.

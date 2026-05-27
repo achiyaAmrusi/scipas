@@ -1,6 +1,6 @@
 import numpy as np
-from pyPAS.lifetime.model import LifetimeModel
-from pyPAS.core.lt import TimeResolution, PASLifetime
+from pyPAS.model.model import LifetimeModel
+from pyPAS.core.lifetime import TimeResolution, PASLifetime
 from pyspectrum import Spectrum
 
 def generate_analytical_lt_spectrum(

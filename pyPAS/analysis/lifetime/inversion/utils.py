@@ -1,8 +1,8 @@
 import numpy as np
 
-from pyPAS.core.lt import TimeResolution
-from pyPAS.lifetime.model import LifetimeModel
-from pyPAS.lifetime.generator import generate_analytical_lt_spectrum
+from pyPAS.core.lifetime import TimeResolution
+from pyPAS.model.model import LifetimeModel
+from pyPAS.analysis.lifetime.generator import generate_analytical_lt_spectrum
 
 def _response_matrix(tau_grid: np.ndarray, time_grid: np.ndarray, resolution: TimeResolution):
     response_mat = np.zeros((len(tau_grid), len(time_grid)))

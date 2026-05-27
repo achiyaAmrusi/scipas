@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import xarray as xr
-from pyPAS.core.lt import PASLifetime
+from pyPAS.core.lifetime import PASLifetime
 
 
 class LifetimeInvert(ABC):

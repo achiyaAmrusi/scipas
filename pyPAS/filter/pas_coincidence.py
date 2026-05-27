@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
-from pyspectrum.detector_parser import TimeChannelParser
-
-ELECTRON_REST_MASS = 511
-
+from pyspectrum import AxisCalibration
+from pyPAS.core.const import ELECTRON_REST_MASS_KEV
 
 class PasCoincidenceFilter:
     """
@@ -23,7 +21,7 @@ class PasCoincidenceFilter:
     Notes
     -----
     - Energy filtering is done in sigma units:
-        σ = FWHM / sqrt(2 * ln(2))
+        σ = FWHM / (2*sqrt(2 * ln(2)))
 
     - Either 'channel' or 'energy' column must be present alongside 'time' in input DataFrames.
 
@@ -64,6 +62,30 @@ class PasCoincidenceFilter:
         -------
         pd.DataFrame
             A DataFrame with columns ['channel_1', 'channel_2'] representing the coincident pairs.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from pyspectrum import AxisCalibration
+    >>> from pyPAS.filter import PasCoincidenceFilter
+
+    >>> det_1 = pd.DataFrame({
+    ... 'time':    [100, 200, 300, 400, 500],
+    ... 'channel': [512, 498, 523, 480, 510]})
+    >>> det_2 = pd.DataFrame({
+    ... 'time':    [102, 205, 350, 401, 600],
+    ... 'channel': [508, 501, 490, 519, 475]})
+
+    >>> time_window = 10  # time units
+    >>> coincident_pairs = PasCoincidenceFilter.time_coincidence_filter(det_1, det_2, max_time_interval=time_window)
+    >>> energy_pairs = PasCoincidenceFilter.energy_coincidence_filter(
+    ... coincidence_events=coincident_pairs,
+    ... axis_calibration_1=AxisCalibration(lambda ch: ch, name="energy_keV"),
+    ... axis_calibration_2=AxisCalibration(lambda ch: ch, name="energy_keV"),
+    ... local_fwhm_1=1.2,
+    ... local_fwhm_2=1.2,
+    ... number_of_cdb_sigma=3)
         """
         # Get the second column names from both inputs
         col1 = cls._get_value_column(time_channel_1, "time_channel_1")
@@ -79,8 +101,8 @@ class PasCoincidenceFilter:
         index_2 = 0
         index_1 = 0
         index_2_lim = time_channel_2.shape[0] - 1
-        time_1 = time_channel_1['time'][index_1]
-        time_2 = time_channel_2['time'][index_2]
+
+        time_2 = time_channel_2['time'].iloc[index_2]
 
         for index_1, time_1 in enumerate(time_channel_1['time']):
             # check coincidence
@@ -99,12 +121,10 @@ class PasCoincidenceFilter:
         return pd.DataFrame({col1+'_1': time_coincidence_events[:coincidence_index, 0],
                              col1+'_2':  time_coincidence_events[:coincidence_index, 1]})
 
-
-
     @classmethod
     def energy_coincidence_filter(cls, coincidence_events: pd.DataFrame,
-                                  energy_calibration_poly_1=np.poly1d([1, 0]), energy_calibration_poly_2=np.poly1d([1, 0]),
-                                  fwhm_1=1, fwhm_2=1, number_of_cdb_sigma=3):
+                                  axis_calibration_1: AxisCalibration, axis_calibration_2: AxisCalibration,
+                                  local_fwhm_1=1, local_fwhm_2=1, number_of_cdb_sigma=3):
         """
         Going through the time and energy stamps of 2 detectors data looking for coincidence pair.
         if the counts pair are valid coincidence measurement, the function saves it.
@@ -113,11 +133,11 @@ class PasCoincidenceFilter:
         ----------
         det_1_time_channel, det_2_time_channel: pd.dataframe
         a table of time - channel, also time - channel - alert-flag is optional
-        det_1_energy_calibration_poly, det_2_energy_calibration_poly: numpy.poly1d([a, b]) (default np.poly1d([1, 0]))
+        axis_calibration_1, axis_calibration_2: AxisCalibration
         the energy calibration of the detector
-        det_1_energy_resolution: float
+        local_fwhm_1: float
          energy resolution of detector 1 in the annihilation peak (FWHM)
-        det_2_energy_resolution: float
+        local_fwhm_2: float
         energy resolution of detector 1 in the annihilation peak (FWHM)
 
         Returns
@@ -130,8 +150,8 @@ class PasCoincidenceFilter:
         columns = coincidence_events.columns
         # Determine whether we have raw channels or already-calibrated energy
         if 'channel_1' in columns and 'channel_2' in columns:
-            calibrate_coincidence_events = pd.DataFrame({'energy_1':energy_calibration_poly_1(coincidence_events['channel_1']),
-                                                         'energy_2':energy_calibration_poly_2(coincidence_events['channel_2'])})
+            calibrate_coincidence_events = pd.DataFrame({'energy_1':axis_calibration_1.apply(coincidence_events['channel_1']),
+                                                         'energy_2':axis_calibration_2.apply(coincidence_events['channel_2'])})
         elif 'energy_1' in columns and 'energy_2' in columns:
             # Already calibrated — just continue
             calibrate_coincidence_events = coincidence_events.copy()
@@ -142,10 +162,10 @@ class PasCoincidenceFilter:
 
         # The resolution deviation
         coincidence_energy_test = np.abs(calibrate_coincidence_events['energy_1'] +\
-                                         calibrate_coincidence_events['energy_2']- 2*ELECTRON_REST_MASS)
+                                         calibrate_coincidence_events['energy_2']- 2*ELECTRON_REST_MASS_KEV)
         # The maximal resolution deviation allowed
-        sig_1 = fwhm_1 / (2 * np.log(2)) ** 0.5
-        sig_2 = fwhm_2 / (2 * np.log(2)) ** 0.5
+        sig_1 = local_fwhm_1 / (2 * np.sqrt(2 * np.log(2)))
+        sig_2 = local_fwhm_2 / (2 * np.sqrt(2 * np.log(2)))
         max_dev = number_of_cdb_sigma*(sig_2 ** 2 + sig_1 ** 2) ** 0.5
 
         calibrate_coincidence_events = calibrate_coincidence_events[coincidence_energy_test<max_dev]
@@ -159,6 +179,7 @@ class PasCoincidenceFilter:
 
         This helper function ensures the DataFrame contains a 'time' column and either a 'channel' or 'energy' column.
         It returns the name of the value column (either 'channel' or 'energy').
+
         Parameters
         ----------
         df : pd.DataFrame

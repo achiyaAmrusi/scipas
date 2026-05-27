@@ -3,14 +3,14 @@ import pandas as pd
 from uncertainties import ufloat
 from uncertainties.unumpy import nominal_values, std_devs
 from scipy.optimize import  least_squares
-from pyPAS.materials import Sample, Material, Layer
+from pyPAS.model import Sample, Material, Layer
 from pyPAS.transport.diffusion import profile_solver
 from pyPAS.transport.diffusion import annihilation_fraction_per_layer
 
 
 class OneBulkDiffusionLengthOptimization:
     """
-    Optimize the bulk positron diffusion length of a uniform single-layer materials
+    Optimize the bulk positron diffusion length of a uniform single-layer model
     (plus surface contribution) to best fit experimentally measured S-parameters.
 
     The optimization is based on solving a simplified effective positron transport equation:
@@ -27,7 +27,7 @@ class OneBulkDiffusionLengthOptimization:
     The class uses:
         1. Provided implantation profiles for multiple beam energies.
         2. Experimental S-parameter data with uncertainties.
-        3. A single-layer initial materials as a starting guess.
+        3. A single-layer initial model as a starting guess.
 
     Workflow:
         - Construct trial samples for candidate diffusion lengths.
@@ -45,7 +45,7 @@ class OneBulkDiffusionLengthOptimization:
         Measured S parameters for each beam energy, including uncertainties.
         Index must correspond to the energies of the implantation profiles.
     initial_guess : Sample
-        Initial guess for the materials geometry and material properties.
+        Initial guess for the model geometry and material properties.
         Must contain one layer with a diffusion coefficient and annihilation rate.
     num_of_mesh_cells : int, optional (default=10000)
         Number of discretization points for solving the transport equation.
@@ -84,10 +84,10 @@ class OneBulkDiffusionLengthOptimization:
 
     def make_sample(self, diffusion_length):
         """
-        Construct a simplified single-layer materials for a given diffusion length.
+        Construct a simplified single-layer model for a given diffusion length.
 
-        The materials consists of:
-        - One layer spanning the full length of the initial materials.
+        The model consists of:
+        - One layer spanning the full length of the initial model.
         - A material with fixed diffusion (=1), zero mobility,
           and bulk annihilation rate defined as 1 / diffusion_length².
         - Absorption length is set to 1 (normalized) (because it has no effect on the diffusion length optimization).
@@ -99,7 +99,7 @@ class OneBulkDiffusionLengthOptimization:
 
         Returns
         -------
-        materials : Sample
+        model : Sample
             A new Sample object containing a single layer with the above properties.
         """
         #eff_absorbtion_length = self.initial_sample.absorbtion_length * self.initial_sample.layers[0].material.diffusion
@@ -119,7 +119,7 @@ class OneBulkDiffusionLengthOptimization:
         positron_profile : xr.DataArray
             Positron distribution across depth
         sample : Sample
-            The layered materials object describing geometry and
+            The layered model object describing geometry and
             material annihilation rates.
 
         Returns
@@ -136,15 +136,15 @@ class OneBulkDiffusionLengthOptimization:
 
     def layers_transport_solver(self, sample, positron_implantation_profiles):
         """
-        Transport solver for annihilation fractions in a layered materials.
+        Transport solver for annihilation fractions in a layered model.
         For each positron implantation profile, solves the positron
-        transport equation in the materials and computes annihilation
+        transport equation in the model and computes annihilation
         fractions in surface and bulk regions.
 
         Parameters
         ----------
         sample : Sample
-            The materials object containing material layers and properties.
+            The model object containing material layers and properties.
         positron_implantation_profiles : list of xr.DataArray
             Each profile defines the depth distribution of implanted
             positrons (normalized).
@@ -187,7 +187,7 @@ class OneBulkDiffusionLengthOptimization:
 
     def s_parameter_calculation(self, diffusion_length):
         """
-        For given materials, given the materials parameters, function calculate the expected S parameter per energy
+        For given model, given the model parameters, function calculate the expected S parameter per energy
 
         Parameters
         ----------
@@ -265,7 +265,7 @@ class OneBulkDiffusionLengthOptimization:
 
     def optimize_diffusion_length(self, bounds=None):
         """
-        Optimize the diffusion length for a one-layer materials.
+        Optimize the diffusion length for a one-layer model.
         Performs nonlinear least-squares minimization of the residuals
         between measured and modeled S-parameters, with respect to the
         diffusion length.

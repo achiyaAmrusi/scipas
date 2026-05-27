@@ -1,19 +1,19 @@
 from dataclasses import dataclass, field
-from pyPAS.materials.material import Material
+from pyPAS.model.material import Material
 
 @dataclass
 class Layer:
     """
-    Represents a single continuous layer within a materials.
+    Represents a single continuous layer within a model.
 
     Each layer is defined by its spatial extent (start and width) and
     the material it consists of. Layers are used to build up a complete
-    materials structure for positron diffusion simulations.
+    model structure for positron diffusion simulations.
 
     Parameters
     ----------
     start : float
-        Starting position of the layer in the materials [nm].
+        Starting position of the layer in the model [nm].
     width : float
         Width (thickness) of the layer [nm].
     material : Material

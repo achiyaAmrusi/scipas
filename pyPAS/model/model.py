@@ -6,7 +6,7 @@ from typing import Sequence
 @dataclass
 class LifetimeModel:
     """
-    Represents a discrete multi-component fit materials.
+    Represents a discrete multi-component fit model.
 
     lifetimes: decay constants (tau_i)
     intensities: relative intensities (I_i)
