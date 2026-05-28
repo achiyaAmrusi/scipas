@@ -69,23 +69,14 @@ class PasCoincidenceFilter:
     >>> import numpy as np
     >>> from pyspectrum import AxisCalibration
     >>> from pyPAS.filter import PasCoincidenceFilter
-
     >>> det_1 = pd.DataFrame({
     ... 'time':    [100, 200, 300, 400, 500],
     ... 'channel': [512, 498, 523, 480, 510]})
     >>> det_2 = pd.DataFrame({
     ... 'time':    [102, 205, 350, 401, 600],
     ... 'channel': [508, 501, 490, 519, 475]})
-
     >>> time_window = 10  # time units
     >>> coincident_pairs = PasCoincidenceFilter.time_coincidence_filter(det_1, det_2, max_time_interval=time_window)
-    >>> energy_pairs = PasCoincidenceFilter.energy_coincidence_filter(
-    ... coincidence_events=coincident_pairs,
-    ... axis_calibration_1=AxisCalibration(lambda ch: ch, name="energy_keV"),
-    ... axis_calibration_2=AxisCalibration(lambda ch: ch, name="energy_keV"),
-    ... local_fwhm_1=1.2,
-    ... local_fwhm_2=1.2,
-    ... number_of_cdb_sigma=3)
         """
         # Get the second column names from both inputs
         col1 = cls._get_value_column(time_channel_1, "time_channel_1")
@@ -144,6 +135,27 @@ class PasCoincidenceFilter:
         -------
         pd.DataFrame
         contain the coincidence pairs where the dataframe columns are ['energy_1, energy_2]
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from pyspectrum import AxisCalibration
+    >>> from pyPAS.filter import PasCoincidenceFilter
+    >>> det_1 = pd.DataFrame({
+    ... 'time':    [100, 200, 300, 400, 500],
+    ... 'channel': [512, 498, 523, 480, 510]})
+    >>> det_2 = pd.DataFrame({
+    ... 'time':    [102, 205, 350, 401, 600],
+    ... 'channel': [508, 501, 490, 519, 475]})
+    >>> time_window = 10  # time units
+    >>> coincident_pairs = PasCoincidenceFilter.time_coincidence_filter(det_1, det_2, max_time_interval=time_window)
+    >>> energy_pairs = PasCoincidenceFilter.energy_coincidence_filter(
+    ... coincidence_events=coincident_pairs,
+    ... axis_calibration_1=AxisCalibration(lambda ch: ch, name="energy_keV"),
+    ... axis_calibration_2=AxisCalibration(lambda ch: ch, name="energy_keV"),
+    ... local_fwhm_1=1.2,
+    ... local_fwhm_2=1.2,
+    ... number_of_cdb_sigma=3)
         """
 
         # taks the data in a copy

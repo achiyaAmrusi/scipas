@@ -1,3 +1,8 @@
-"""Coincidence filters package, the filter package includes only PAS db filter for now.
- Later age-momentum correlation amd Lifetime filters will be added"""
+"""
+Coincidence filtering package.
+
+PAS experiments require specialized coincidence filter modules, including:
+- Time–energy coincidence filters
+- Lifetime filters within an energy domain
+"""
 from .pas_coincidence import PasCoincidenceFilter
