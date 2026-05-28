@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from warnings import warn
-from scipy.integrate import cumtrapz
+from scipy.integrate import cumulative_trapezoid
 from scipy.constants import centi, micro, nano
 import xarray as xr
 from pyPAS.transport.implantation.utils import  get_layer_indices
@@ -29,6 +29,19 @@ def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
     ---------
     [1] V.J. Ghosh et al. https://doi.org/10.1016/0169-4332(94)00331-9.
     [2] Jerzy Dryzek et al. https://doi.org/10.1016/j.nimb.2008.06.033.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from pyPAS.transport import ghosh_profile, ghosh_material_parameters
+    >>> depth_vector = np.arange(0, 5, 0.01)
+    >>> Be_parms = ghosh_material_parameters().iloc[0]
+    >>> pos_profile = ghosh_profile(depth_vector=depth_vector, positron_energy=10,
+    ...                         density=Be_parms.density, gosh_parms=Be_parms)
+    >>> np.all(pos_profile >= 0).item()
+    True
+    >>> pos_profile.sum().item() > 0
+    True
     """
     if ('l' not in gosh_parms) or ('m' not in gosh_parms) or ('N_lm' not in gosh_parms) or (
             'c_lm' not in gosh_parms) or ('B' not in gosh_parms) or ('n' not in gosh_parms) or (
@@ -65,6 +78,18 @@ def makhov_profile(depth_vector, positron_energy, density, makhov_parms):
     The implanted thermalized positron distribution  [positrons/nano meter]
 
     [1] Jerzy Dryzek et al. https://doi.org/10.1016/j.nimb.2008.06.033.
+        Examples
+    --------
+    >>> import numpy as np
+    >>> from pyPAS.transport import makhov_material_parameters, makhov_profile
+    >>> depth_vector = np.arange(0, 5, 0.01)
+    >>> Be_parms = makhov_material_parameters().iloc[0]
+    >>> pos_profile = makhov_profile(depth_vector=depth_vector, positron_energy=10,
+    ...                         density=Be_parms.density, makhov_parms=Be_parms)
+    >>> np.all(pos_profile >= 0).item()
+    True
+    >>> pos_profile.sum().item() > 0
+    True
     """
     if ('m' not in makhov_parms) or ('n' not in makhov_parms) or ('A_half' not in makhov_parms):
         raise KeyError(
@@ -127,7 +152,7 @@ def compute_cumulative_profile(
     depth = np.linspace(0, z_bar * depth_multiplier, num_bin)
     profile = implantation_profile_function(depth, positron_energy, density, material_params)
 
-    cumulative = cumtrapz(profile.values, depth, initial=0)
+    cumulative = cumulative_trapezoid(profile.values, depth, initial=0)
     cumulative /= cumulative[-1]  # normalize to 1
 
     return depth, cumulative
@@ -138,10 +163,10 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
                                     implantation_profile_function=ghosh_profile):
     """
     Calculate the positrons implantation profile in a multilayer model using cumulative distribution of positrons in each material.
-    The motivation to use this method is that approximatly energetic positrons see the electrons as cloud.
+    The motivation to use this method is that approximately energetic positrons see the electrons as cloud.
     This is not correct in general and was not verified by the auther!
-    It is stressed here that for full analysis direct MC simulation are probably safer for implantation in complex structures.
-    TODO: Verifiey the module
+    It is stressed here,
+    that for full analysis direct MC simulation are probably safer for implantation in complex structures.
 
     Returns
     -------
@@ -193,7 +218,7 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
         cumulative_total = interp_cdf[-1]
 
     cumulative_profile = xr.DataArray(cumulative_profile, coords={'x': depth_vector})
-    # diffrentiate in a central manner the CDF to get the PDF
+    # differentiate in a central manner the CDF to get the PDF
     pdf = cumulative_profile.diff('x') / cumulative_profile.x.diff('x')
     pdf.coords['x'] = cumulative_profile.x[:-1] + np.diff(cumulative_profile.x.values) / 2
 
