@@ -95,7 +95,7 @@ class PAScdb:
         ...     'energy_1': np.random.normal(511, 1, 1000),
         ...     'energy_2': np.random.normal(511, 1, 1000)})
         >>> cdb = PAScdb(df, energy_min=-4, energy_max=4, mesh_interval=0.1)
-        >>> db = cdb.doppler_broadening()   # projects the cached map
+        >>> db = cdb.doppler_broadening(centralize_peak=False)   # projects the cached map
         >>> res = cdb.resolution()           # projects the cached map
         """
         expected_columns = ['energy_1', 'energy_2']
