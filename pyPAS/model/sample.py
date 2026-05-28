@@ -30,6 +30,18 @@ class Sample:
 
     get_layer_at(position: float) -> Layer
         Returns the layer object in which a given depth (position) lies [nm].
+
+    >>> from pyPAS.model import Defect, Material, Layer, Sample
+    >>> divacancy = Defect(name='Si-divacancy', annihilation_rate=0.15)
+    >>> silicon = Material(name="Silicon",
+    ...                    diffusion=0.1,
+    ...                    mobility=0.1,
+    ...                    bulk_annihilation_rate=0.1,
+    ...                    defects=[divacancy])
+    >>> layer = Layer(start=0.0, width=10.0, material=silicon)
+    >>> sample = Sample(layers=[layer], absorbtion_length=0.1)
+    >>> length = sample.sample_length()
+    >>> l = sample.get_layer_at(position=5)
     """
     layers: List[Layer] = field(default_factory=list)
     absorbtion_length: float = 0.0 # [nm]

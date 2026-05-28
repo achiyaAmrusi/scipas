@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pyPAS.model.material import Material
 
 @dataclass
@@ -27,6 +27,14 @@ class Layer:
         Thickness of the layer [nm].
     material : Material
         Material description of the layer (including diffusion and annihilation properties).
+
+    >>> from pyPAS.model.layer import Layer
+    >>> from pyPAS.model import Material
+    >>> copper = Material(name="copper",
+    ...                    diffusion=0.1,
+    ...                    mobility=0.1,
+    ...                    bulk_annihilation_rate=0.1)
+    >>> layer = Layer(start=0.0, width=1.0, material=copper)
     """
     material: Material
     start: float = 0.0  # [nm]

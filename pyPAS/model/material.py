@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import List
 import numpy as np
 
-
 @dataclass
 class Defect:
     """
@@ -14,6 +13,11 @@ class Defect:
         Identifier for the defect type.
     - annihilation_rate: float
         Annihilation rate of trapped positrons in the defect [1/ps].
+
+    Examples
+    --------
+    >>> from pyPAS.model import Defect
+    >>> vacancy = Defect(name='Copper-vacancy', annihilation_rate=0.1)
     """
     name: str
     annihilation_rate: float  # [1/ps]
@@ -55,10 +59,19 @@ class Material:
     - diffusion_coefficient: float
     - bulk_annihilation_rate: float
     - defects: List[Defect]
+    Examples
+    --------
+    >>> from pyPAS.model import Material
+    >>> divacancy = Defect(name='Copper-divacancy', annihilation_rate=0.15)
+    >>> silicon = Material(name="Silicon",
+    ...                    diffusion=0.1,
+    ...                    mobility=0.1,
+    ...                    bulk_annihilation_rate=0.1,
+    ...                    defects=[divacancy])
     """
     name: str ='temporary'
-    diffusion: float  = 0.0# [nm²/ps]
-    mobility: float  = 0.0# [nm²/ps*V]
+    diffusion: float  = 0.0 # [nm²/ps]
+    mobility: float  = 0.0 # [nm²/ps*V]
     bulk_annihilation_rate: float = 0.0  # [1/ps] – always present
     defects: List[Defect] = field(default_factory=list)
 
