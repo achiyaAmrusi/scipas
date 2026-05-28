@@ -1,8 +1,6 @@
-pandas~=2.1.1
-numpy~=1.26.0
-pyspectrum~=1.0
-uncertainties~=3.1.7
-xarray~=2023.10.1
-setuptools~=78.1.1
-pypas~=1.0
-scipy~=1.11.3
+numpy>=2.0.0,<3.0
+pandas>=2.3,<4.0
+scipy>=1.14.0
+xarray>=2024.6.0
+uncertainties>=3.1
+pyspectrum>=0.3
