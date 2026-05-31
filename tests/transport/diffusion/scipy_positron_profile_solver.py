@@ -9,7 +9,7 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
                          electric_field: xr.DataArray = None,
                          num_of_mesh_cells=1000):
     """
-    The solution for positron implantation boundary problem for given model and positron energy.
+    A solver for positron diffusion problem for given model and positron energy.
     The solution method here uses scipy solve_bvp function in order to solve the self-consistent problem.
     because of its self-consisting nature this method is slow comparable with the matrix solution.
 

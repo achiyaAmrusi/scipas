@@ -6,17 +6,17 @@ from scipy.constants import centi, micro, nano
 import xarray as xr
 from pyPAS.transport.implantation.utils import  get_layer_indices
 
-def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
+def ghosh_profile(positron_energy,depth_vector,  density, gosh_parms):
     """
     positron implantation profile pdf according to the ghosh profile [1].
     Parameters for profile are included in this package library via the Material package for coomon model [1,2].
     For complex material it is recommended to run MC simulation.
     Parameters
     ----------
-    - depth_vector: np.ndarray
-    The depth grid [nm-meters]
     - positron_energy: float
     the positron energy in keV
+    - depth_vector: np.ndarray
+    The depth grid [nm-meters]
     - density: float [gr/cc]
     density of the material in gr/cc
     - gosh_parms: dictionary
@@ -34,9 +34,9 @@ def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
     --------
     >>> import numpy as np
     >>> from pyPAS.transport import ghosh_profile, ghosh_material_parameters
-    >>> depth_vector = np.arange(0, 5, 0.01)
+    >>> depth_vector = np.arange(0, 5e3, 1)
     >>> Be_parms = ghosh_material_parameters().iloc[0]
-    >>> pos_profile = ghosh_profile(depth_vector=depth_vector, positron_energy=10,
+    >>> pos_profile = ghosh_profile(positron_energy=10, depth_vector=depth_vector,
     ...                         density=Be_parms.density, gosh_parms=Be_parms)
     >>> np.all(pos_profile >= 0).item()
     True
@@ -57,17 +57,17 @@ def ghosh_profile(depth_vector, positron_energy, density, gosh_parms):
     return profile
 
 
-def makhov_profile(depth_vector, positron_energy, density, makhov_parms):
+def makhov_profile( positron_energy, depth_vector, density, makhov_parms):
     """
     positron implantation profile pdf according to the makovian profile [1].
     The parameters the profile are included in this package library via the Material package,
     For complex material it is recommended to run MC simulation.
         Parameters
         ----------
-        - depth_vector: np.ndarray # nm
-        The depth grid [nm-meters]
         - positron_energy: float
         the positron energy in keV
+        - depth_vector: np.ndarray # nm
+        The depth grid [nm-meters]
         - density: float [gr/cc]
         density of the material in gr/cc
         - makhov_parms: dictionary
@@ -82,9 +82,9 @@ def makhov_profile(depth_vector, positron_energy, density, makhov_parms):
     --------
     >>> import numpy as np
     >>> from pyPAS.transport import makhov_material_parameters, makhov_profile
-    >>> depth_vector = np.arange(0, 5, 0.01)
+    >>> depth_vector = np.arange(0, 5e3, 1)
     >>> Be_parms = makhov_material_parameters().iloc[0]
-    >>> pos_profile = makhov_profile(depth_vector=depth_vector, positron_energy=10,
+    >>> pos_profile = makhov_profile(positron_energy=10, depth_vector=depth_vector,
     ...                         density=Be_parms.density, makhov_parms=Be_parms)
     >>> np.all(pos_profile >= 0).item()
     True
@@ -141,16 +141,18 @@ def compute_cumulative_profile(
     if implantation_profile_function == ghosh_profile:
         z_bar = (material_params['B'] * (material_params['density'] / density)) * positron_energy ** material_params[
             'n']
-    else:
+    elif implantation_profile_function == makhov_profile:
         m = material_params['m']
         n = material_params['n']
         a_half = material_params['A_half'] * micro # gr/cm**2
 
         z_half = a_half * positron_energy ** n / density * centi/nano
         z_bar = z_half / (np.log(2)) ** (1 / m)
+    else:
+        raise ValueError("Unknown profile function")
 
     depth = np.linspace(0, z_bar * depth_multiplier, num_bin)
-    profile = implantation_profile_function(depth, positron_energy, density, material_params)
+    profile = implantation_profile_function(positron_energy, depth, density, material_params)
 
     cumulative = cumulative_trapezoid(profile.values, depth, initial=0)
     cumulative /= cumulative[-1]  # normalize to 1
@@ -172,6 +174,19 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
     -------
     pdf : xr.DataArray
         the positron implantation profile [positron/nm]
+
+    >>> import numpy as np
+    >>> from pyPAS.transport import makhov_material_parameters, makhov_profile, multilayer_implantation_profile
+    >>> depth_vector = np.arange(0, 5e3, 1)
+    >>> Be_parms = makhov_material_parameters().iloc[0]
+    >>> pos_profile = multilayer_implantation_profile(positron_energy=10, depth_vector=depth_vector,
+    ...                                               widths=[5], materials_parameters=[Be_parms],
+    ...                                               densities=[Be_parms.density],
+    ...                                               implantation_profile_function=makhov_profile)
+    >>> np.all(pos_profile >= 0).item()
+    True
+    >>> pos_profile.sum().item() > 0
+    True
     """
 
     if depth_vector[-1] > sum(widths):
@@ -203,7 +218,7 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
         else:
             local_depth = depth_vector[start:end] - depth_vector[start]
 
-        # calculate the point at which the cumulative of the implantation, in the layer material alone, gets the value of cumulative_total
+        # calculate the point at which the implantation cumulative, in the layer material alone, gets the value of cumulative_total
         z0 = np.interp(cumulative_total, material_cumulative, material_depth,
                        left=material_depth[0], right=material_depth[-1])
         # interpulate from z0 to z0+layer width
