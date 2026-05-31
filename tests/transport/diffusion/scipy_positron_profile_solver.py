@@ -7,7 +7,9 @@ from scipy.integrate import solve_bvp
 def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
                          sample: Sample,
                          electric_field: xr.DataArray = None,
-                         num_of_mesh_cells=1000):
+                         num_of_mesh_cells=1000,
+                         initial_guess: xr.DataArray = None,
+                         max_nodes: int = None):
     """
     A solver for positron diffusion problem for given model and positron energy.
     The solution method here uses scipy solve_bvp function in order to solve the self-consistent problem.
@@ -99,12 +101,15 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
     # The mesh array
     mesh = np.linspace(0, sample.sample_length(), num_of_mesh_cells)
 
-    # The initial guess of the positron implantation is the solution from the fast solve,
-    # we can see in scipy if it converge
-    initial_guess = np.array([positron_implantation_profile.interp(x=x) for x in mesh])
-    initial_guess = xr.DataArray(np.nan_to_num(initial_guess), coords={'x': mesh})
+    if initial_guess is not None:
+        y0_vals = np.clip(initial_guess.interp(x=mesh).values, 0.0, None)
+    else:
+        y0_vals = np.array([float(positron_implantation_profile.interp(x=x)) for x in mesh])
+    y0_vals = np.nan_to_num(y0_vals)
+    y0_da = xr.DataArray(y0_vals, coords={'x': mesh})
 
+    effective_max_nodes = max_nodes if max_nodes is not None else max(num_of_mesh_cells + 1, 1000)
     sol = solve_bvp(fun=ode_system, bc=boundary_conditions, x=mesh,
-                    y=np.vstack((initial_guess, initial_guess.differentiate('x'))),
-                    max_nodes=max(num_of_mesh_cells + 1, 1000), tol=1e-5)
+                    y=np.vstack((y0_da, y0_da.differentiate('x'))),
+                    max_nodes=effective_max_nodes, tol=1e-5)
     return sol
