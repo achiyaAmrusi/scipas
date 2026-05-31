@@ -277,22 +277,20 @@ def test_two_layer_no_drift(two_layer_sample):
     source = _gaussian_source(sample.sample_length(), center=50.0, sigma=8.0)
 
     fd = profile_solver(source, sample, mesh_size=3000)
-    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=1000, initial_guess=fd, max_nodes=5000)
+    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=1000, initial_guess=fd, max_nodes=3000)
 
     # scipy's collocation residual check stalls at the λ-discontinuity (z=20 nm)
     # and does not formally converge, but because the FD initial guess is already
     # near the true solution the iterates are physically correct.  We use sc.sol
-    # regardless of sc.success, matching the notebook's approach.
+    # regardless of sc.success. This indeed gives a good solution compared with the FD solution
     x = fd.coords["x"].values
     sc_profile = xr.DataArray(np.clip(sc.sol(x)[0], 0.0, None), coords={"x": x})
 
     fd_fracs = compute_annihilation_fractions(fd, sample)
     sc_fracs = compute_annihilation_fractions(sc_profile, sample)
 
-    for layer_idx in fd_fracs.coords["layer"].values:
-        fd_f = float(fd_fracs.sel(layer=layer_idx))
-        sc_f = float(sc_fracs.sel(layer=layer_idx))
-        assert abs(fd_f - sc_f) < 0.01, (
-            f"Layer {layer_idx}: annihilation fractions differ by {abs(fd_f - sc_f):.4f} "
-            f"(FD={fd_f:.4f}, scipy={sc_f:.4f})"
-        )
+    diff = np.abs(fd_fracs.values - sc_fracs.values)
+    assert diff.max() < 0.01, (
+        f"per-layer fraction max diff {diff.max():.4f} exceeds 1 %\n"
+        f"  FD:    {fd_fracs.values}\n  scipy: {sc_fracs.values}"
+    )
