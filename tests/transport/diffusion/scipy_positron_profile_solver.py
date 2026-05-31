@@ -77,7 +77,7 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
         dc_dx = density[1]
         # second derivitive
         d_2_c_dx_2 = [(1 / material.diffusion) * ( \
-                    - material.mobility * (density[1][i] * E[i] + density[0][i] * dE_dx[i]) \
+                    + material.mobility * (density[1][i] * E[i] + density[0][i] * dE_dx[i]) \
                     + (eff_annihilation_rate[i]) * density[0][i] \
                     - I[i].values) for i, material in enumerate(materials)]
         return np.vstack((dc_dx, d_2_c_dx_2))
@@ -91,7 +91,7 @@ def scipy_profile_solver(positron_implantation_profile: xr.DataArray,
         (bc 2) Ddc(0)/dx = $\alpha_s$*c(0) - > radiative condition
         Note: I'd like to make from both vacuum condition and see if it is more compatible
         """
-        L_a = sample.absorbtion_length
+        L_a = sample.absorption_length
         L_p = sample.layers[-1].material.effective_diffusion_length()
         return np.array([density_in_surface[1] - density_in_surface[0] / L_a,
                          density_in_deep_bulk[1]+density_in_deep_bulk[0]/L_p])  # Boundary conditions
