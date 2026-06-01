@@ -1,10 +1,9 @@
 import numpy as np
 import pytest
-import xarray as xr
 
-from pyPAS.core.lt import PASLifetime, MeasuredRF, MultiGaussianRF
-from pyPAS.lifetime.model import LifetimeModel
-from pyPAS.lifetime.generator import generate_lt_spectrum
+from pyPAS.core.lifetime import MultiGaussianRF
+from pyPAS.model.lifetime import LifetimeModel
+from pyPAS.analysis.lifetime.generator import generate_lt_spectrum
 from pyspectrum.spectrum import Spectrum
 # -----------------------------------------------------------------------------
 # Fixtures
