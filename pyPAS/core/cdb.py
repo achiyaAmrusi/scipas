@@ -40,10 +40,6 @@ class PAScdb:
         Project the 2D histogram along the Doppler axis to produce a 1D resolution spectrum.
         Returns a `Peak` object.
 
-    from_dataframe(df: pd.DataFrame) -> PAScdb
-        Alternate constructor to create a PAScdb instance from a DataFrame with columns:
-        ['energy_1', 'energy_2'].
-
     Notes
     -----
     - All energy ranges provided are interpreted **relative to the 511 keV** positron rest mass energy.

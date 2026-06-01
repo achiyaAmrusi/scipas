@@ -1,7 +1,7 @@
+import warnings
 import numpy as np
 import xarray as xr
-from uncertainties import ufloat, nominal_value
-
+from uncertainties import nominal_value
 from pyspectrum.core import Domain, Spectrum
 from pyspectrum.calibration import AxisCalibration
 from pyspectrum.identification import SNRFinder, Convolution, gaussian_2_dev
@@ -57,9 +57,6 @@ class PASdb(Domain):
       from_spectrum(cls, spectrum: Spectrum) -> PASdb
           Create a PASdb object from a `Spectrum` instance by identifying the 511 keV peak.
 
-      from_dataframe(cls, spectrum_data_frame, energy_calibration_poly, fwhm_calibration=None) -> PASdb
-          Create a PASdb object from a pandas DataFrame containing 'channel' and 'counts' columns.
-
       """
 
     def __init__(self, spectrum: Spectrum,
@@ -88,6 +85,21 @@ class PASdb(Domain):
             The axis value the peak center should be mapped to after centralization.
             Defaults to the electron rest mass energy in keV (510.99895 keV).
             For example, user can use 0.0 for CDB or momentum spectra which are naturally centered around zero.
+
+                --------
+        >>> import numpy as np
+        >>> from pyspectrum import Spectrum, Domain, AxisCalibration, ResolutionCalibration
+        >>> bins = np.linspace(511-100, 511+100, 1000)
+        >>> centers = (bins[1:] + bins[:-1])/2
+        >>> list_counts = np.random.normal(loc=511, scale=5, size=1000000)
+        >>> counts, _ = np.histogram(list_counts, bins=bins)
+        >>> counts_with_noise = np.random.poisson(counts + 1000)
+        >>> resolution = ResolutionCalibration(lambda e: 5*2*np.sqrt(2*np.log(2)))
+        >>> spec = Spectrum(counts=counts_with_noise,
+        ...          counts_err=np.sqrt(counts_with_noise),
+        ...          axis_calib=AxisCalibration.from_array(centers),
+        ...          resolution_calib=resolution)
+        >>> db = PASdb.from_spectrum(spec)
         """
         super().__init__(spectrum=spectrum, start=start, stop=stop, background=background)
         if centralize_peak:
@@ -173,7 +185,7 @@ class PASdb(Domain):
         Returns
         -------
         ufloat
-         The calculated s parameter with associated uncertainty.
+         The calculated w parameter with associated uncertainty.
         """
 
         bin_width = (self.spectrum.axis[1]-self.spectrum.axis[0])
@@ -195,32 +207,47 @@ class PASdb(Domain):
         w1 = sum_under(single_peak_domain=self, left_edge=e_1_l, right_edge=e_2_l)
         w2 = sum_under(single_peak_domain=self, left_edge=e_1_r, right_edge=e_2_r)
 
-        # The rest of the peak (Also check that the boundaries are not too close and if so make them the same)
+        # The rest of the peak — gaps smaller than one bin are sub-resolution.
+        # A sub-bin gap is small but not zero in PAS; warn and still compute.
 
-        # left
-        if np.abs(e_1_peak-e_1_l) > bin_width:
-            d1 = sum_under(single_peak_domain=self, left_edge=e_1_peak, right_edge=e_1_l)
-        elif np.abs(e_1_peak-e_1_l) == 0:
+        # left: region between peak edge and left W window
+        d1_gap = np.abs(e_1_peak - e_1_l)
+        if d1_gap == 0:
             d1 = 0
         else:
-            raise ValueError("The boundaries of W and the peak are too close.\n"
-                             "To minimize computational errors, consider aligning the boundaries or increasing their separation.")
-        # middle
-        if np.abs(e_2_l-e_1_r) > bin_width:
-            d2 = sum_under(single_peak_domain=self, left_edge=e_2_l, right_edge=e_1_r)
-        elif np.abs(e_2_l - e_1_r) == 0:
+            if d1_gap < bin_width:
+                warnings.warn(
+                    f"Left gap between peak boundary and W window ({d1_gap:.4f} keV) "
+                    f"is smaller than one bin ({bin_width:.4f} keV). "
+                    "Sub-bin integration may have limited accuracy.",
+                    UserWarning, stacklevel=2)
+            d1 = sum_under(single_peak_domain=self, left_edge=e_1_peak, right_edge=e_1_l)
+
+        # middle: S region between the two W windows
+        d2_gap = np.abs(e_2_l - e_1_r)
+        if d2_gap == 0:
             d2 = 0
         else:
-            raise ValueError("The boundaries of W and the peak are too close.\n"
-                             "To minimize computational errors, consider aligning the boundaries or increasing their separation.")
-        # right
-        if np.abs(e_1_r-e_2_peak) > bin_width:
-            d3 = sum_under(single_peak_domain=self, left_edge=e_1_r, right_edge=e_2_peak)
-        elif np.abs(e_1_r - e_2_peak) == 0:
+            if d2_gap < bin_width:
+                warnings.warn(
+                    f"Middle gap between W windows ({d2_gap:.4f} keV) "
+                    f"is smaller than one bin ({bin_width:.4f} keV). "
+                    "Sub-bin integration may have limited accuracy.",
+                    UserWarning, stacklevel=2)
+            d2 = sum_under(single_peak_domain=self, left_edge=e_2_l, right_edge=e_1_r)
+
+        # right: region between right W window and peak edge
+        d3_gap = np.abs(e_2_r - e_2_peak)
+        if d3_gap == 0:
             d3 = 0
         else:
-            raise ValueError("The boundaries of W and the peak are too close.\n"
-                             "To minimize computational errors, consider aligning the boundaries or increasing their separation.")
+            if d3_gap < bin_width:
+                warnings.warn(
+                    f"Right gap between W window and peak boundary ({d3_gap:.4f} keV) "
+                    f"is smaller than one bin ({bin_width:.4f} keV). "
+                    "Sub-bin integration may have limited accuracy.",
+                    UserWarning, stacklevel=2)
+            d3 = sum_under(single_peak_domain=self, left_edge=e_2_r, right_edge=e_2_peak)
 
         return (w1+w2)/(w1+w2+d1+d2+d3)
 
