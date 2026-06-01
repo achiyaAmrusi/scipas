@@ -20,25 +20,18 @@ class PAScdb:
     pair_df : pd.DataFrame
         DataFrame containing coincidence photon energy pairs, with two columns:
         ['energy_1', 'energy_2']. Each row represents a detected event.
+    coincidence_map : xr.DataArray
+        Precomputed 2D coincidence histogram (resolution × doppler), cached at
+        construction. Dims: ``["resolution", "doppler"]``; coords: bin midpoints in keV.
 
     Methods
     -------
-    __init__(gamma_energy_pair)
-        Initialize the class with a DataFrame containing with columns:
-        ['energy_1', 'energy_2']. of the photon pair
-
-    coincidence_map(energy_dynamic_range, mesh_interval) -> xr.DataArray
-        Compute a 2D histogram of the coincidence data with axes:
-        - x-axis: resolution = (E1 + E2 − 2·511 keV)/2
-        - y-axis: Doppler = (E1 − E2)/2
-
-    doppler_broadening_spectrum(energy_dynamic_range, mesh_interval) -> PASdb
-        Project the 2D histogram along the resolution axis to produce a 1D Doppler spectrum.
-        Returns a `PASdb` object for further analysis (e.g., S/W parameters).
-
-    resolution_spectrum(energy_dynamic_range, mesh_interval) -> Peak
-        Project the 2D histogram along the Doppler axis to produce a 1D resolution spectrum.
-        Returns a `Peak` object.
+    doppler_broadening(centralize_peak, center_value) -> PASdb
+        Project the coincidence map along the resolution axis to produce a 1D
+        Doppler broadening spectrum wrapped in a ``PASdb`` domain.
+    resolution() -> Domain
+        Project the coincidence map along the Doppler axis to produce a 1D
+        resolution (sum-energy) spectrum.
 
     Notes
     -----
@@ -215,8 +208,8 @@ class PAScdb:
 
         Returns
         -------
-        Peak
-            A Peak spectrum object containing the resolution spectrum and dummy timing info.
+        Domain
+            A Domain containing the 1D resolution spectrum (sum-energy axis).
         """
         resolution = self.coincidence_map.sum("doppler")
         resolution_spectrum = Spectrum(counts=resolution.values,

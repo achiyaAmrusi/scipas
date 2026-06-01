@@ -43,8 +43,9 @@ class PASdb(Domain):
 
       Methods
       -------
-      centralize_annihilation_peak()
-        shift the axis calibration so it's centralize the annihilation peak around 511 [KeV]
+      recenter(center_value) -> None
+          Shift the axis calibration in-place so the annihilation peak center aligns
+          with ``center_value`` (default: electron rest mass energy, ~511 keV).
 
       s_parameter_calculation(energy_domain_total, energy_domain_s) -> ufloat
           Calculate the S parameter, defined as the ratio of counts in the central peak region
@@ -54,8 +55,12 @@ class PASdb(Domain):
           Calculate the W parameter, defined as the ratio of counts in the peak wings
           to the total counts across the full peak range.
 
-      from_spectrum(cls, spectrum: Spectrum) -> PASdb
-          Create a PASdb object from a `Spectrum` instance by identifying the 511 keV peak.
+      from_domain(cls, domain, centralize_peak, center_value) -> PASdb
+          Wrap an existing ``Domain`` as a ``PASdb``, optionally recentering the axis.
+
+      from_spectrum(cls, spectrum, ...) -> PASdb
+          Locate the 511 keV annihilation peak in a ``Spectrum`` automatically and
+          return it as a ``PASdb`` domain.
 
       """
 
@@ -86,7 +91,8 @@ class PASdb(Domain):
             Defaults to the electron rest mass energy in keV (510.99895 keV).
             For example, user can use 0.0 for CDB or momentum spectra which are naturally centered around zero.
 
-                --------
+        Examples
+        --------
         >>> import numpy as np
         >>> from pyspectrum import Spectrum, Domain, AxisCalibration, ResolutionCalibration
         >>> bins = np.linspace(511-100, 511+100, 1000)
@@ -175,12 +181,10 @@ class PASdb(Domain):
         energy_domain_total: iterable (tuple/list)
          Tuple containing the total energy domain of interest of the defect parameter
          calculation (e.g., (E1, E2)).
-        energy_domain_w_left: iterable (tuple/list)
-        Tuple (2 index) containing the specific energy domain
-         for W parameter calculation in the right wing.
-        energy_domain_w_right: iterable (tuple/list)
-         Tuple (2 index) containing the specific energy domain
-         for W parameter calculation in the left wing.
+        energy_domain_w_left : iterable (tuple/list)
+            (e_low, e_high) integration window for the left wing of the W parameter.
+        energy_domain_w_right : iterable (tuple/list)
+            (e_low, e_high) integration window for the right wing of the W parameter.
 
         Returns
         -------
@@ -256,12 +260,12 @@ class PASdb(Domain):
                     centralize_peak: bool = True,
                     center_value : float = ELECTRON_REST_MASS_KEV):
         """
-        load spectrum, look for the 511 peak and return it
+        Wrap an existing ``Domain`` as a ``PASdb``, optionally recentering the axis.
 
         Parameters
         ----------
-        domain: Domain
-         annhilation peak domain
+        domain : Domain
+            A domain already sliced around the annihilation peak.
         centralize_peak : bool
             If True, shifts the axis calibration so the peak center aligns
             with electron_rest_mass_value.
@@ -273,7 +277,7 @@ class PASdb(Domain):
         Returns
         -------
         PASdb
-        core spectrum from the file in PASdb class .
+            The domain recast as a ``PASdb`` instance, with axis optionally recentered.
         """
         return PASdb(domain.spectrum,
                      domain.start,
