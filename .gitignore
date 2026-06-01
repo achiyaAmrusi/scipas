@@ -34,3 +34,7 @@ build/
 .idea/
 *.swp
 .DS_Store
+
+# Claude agent files
+CLAUDE.md
+.claude/
