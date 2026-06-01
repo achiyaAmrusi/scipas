@@ -19,4 +19,4 @@ from pyPAS.transport import (
 )
 
 # VEDB analysis
-from pyPAS.analysis import DiffusionLengthOptimization
+from pyPAS.analysis import DiffusionLengthOptimization, compute_s_lineshape, compute_w_lineshape
