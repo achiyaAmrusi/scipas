@@ -1,5 +1,5 @@
 import numpy as np
-from pyPAS.model.model import LifetimeModel
+from pyPAS.model.lifetime import LifetimeModel
 from pyPAS.core.lifetime import TimeResolution, PASLifetime
 from pyspectrum import Spectrum
 

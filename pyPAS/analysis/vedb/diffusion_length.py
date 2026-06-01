@@ -70,6 +70,7 @@ class DiffusionLengthOptimization:
                  s_measurement: pd.Series,
                  initial_guess: Sample,
                  num_of_mesh_cells: int = 10000):
+
         self.positron_implantation_profiles = positron_implantation_profiles
         self.initial_sample = initial_guess
         self.s_measurement = nominal_values(s_measurement)
@@ -107,30 +108,7 @@ class DiffusionLengthOptimization:
         ]
         return Sample(layers=layers, absorption_length=1)
 
-    def _profile_to_fractions(self, positron_profile, sample) -> list:
-        """
-        Extract annihilation fractions from a positron profile after diffusion.
-
-        Wraps `compute_annihilation_fractions` and returns fractions as a flat list
-        ordered as [surface, layer_0, layer_1, ...].
-
-        Parameters
-        ----------
-        positron_profile : xr.DataArray
-            Positron density profile after solving the transport equation [positrons/nm].
-        sample : Sample
-            Layered sample defining geometry and annihilation rates.
-
-        Returns
-        -------
-        list of float
-            Annihilation fractions ordered as [surface, layer_0, layer_1, ...].
-            Length is n_layers + 1.
-        """
-        fractions = compute_annihilation_fractions(positron_profile, sample)
-        return [fractions.sel(layer=i).item() for i in range(-1, self.n_layers)]
-
-    def layers_transport_solver(self, sample: Sample, profiles: list) -> np.ndarray:
+    def layers_transport_solver(self, sample: Sample, implantation_profiles: list) -> np.ndarray:
         """
         Solve the positron transport equation for each implantation profile
         and return the annihilation fraction matrix.
@@ -139,7 +117,7 @@ class DiffusionLengthOptimization:
         ----------
         sample : Sample
             Trial sample for which the transport equation is solved.
-        profiles : list of xr.DataArray
+        implantation_profiles : list of xr.DataArray
             Positron implantation profiles, one per beam energy.
 
         Returns
@@ -149,13 +127,14 @@ class DiffusionLengthOptimization:
             Each row corresponds to one beam energy; columns are
             [surface, layer_0, layer_1, ...].
         """
-        frac_matrix = np.zeros((len(profiles), self.n_layers + 1))
-        for i, p in enumerate(profiles):
-            frac_matrix[i] = self._profile_to_fractions(
-                profile_solver(p, sample, mesh_size=self.num_of_mesh_cells), sample)
+        frac_matrix = np.zeros((len(implantation_profiles), self.n_layers + 1))
+        for i, p in enumerate(implantation_profiles):
+            frac_matrix[i] = compute_annihilation_fractions(
+                positron_profile=profile_solver(p, sample, mesh_size=self.num_of_mesh_cells),
+                sample=sample).values
         return frac_matrix
 
-    def s_value_per_layer(self, frac_matrix: np.ndarray) -> np.ndarray:
+    def layer_s_value(self, frac_matrix: np.ndarray) -> np.ndarray:
         """
         Estimate the S-parameter characteristic of each annihilation channel
         via linear least squares.
@@ -199,24 +178,23 @@ class DiffusionLengthOptimization:
         """
         sample = self.make_sample(diffusion_lengths)
         frac_matrix = self.layers_transport_solver(sample, self.positron_implantation_profiles)
-        s_vec = self.s_value_per_layer(frac_matrix)
+        s_vec = self.layer_s_value(frac_matrix)
         s_calc = frac_matrix @ s_vec
         if np.any(s_vec[1:] >= 1) or np.any(s_vec <= 0):
             return np.full_like(s_calc, 1e6)
         return (s_calc - self.s_measurement) / self.s_measurement_dev
 
-    def extract_error(self, ls_results) -> list:
+    def extract_fit_results(self, ls_results) -> list:
         """
-        Extract best-fit diffusion lengths and their 1σ uncertainties from
-        the least-squares result using the Gauss-Newton covariance approximation.
+        Extract best-fit parameters and full covariance matrix from least-squares result.
 
-        The covariance matrix is estimated from the Jacobian via SVD:
+        The covariance matrix is estimated from the Jacobian via the Gauss-Newton
+        approximation using SVD:
 
-            J ≈ U S Vᵀ  →  cov ≈ (Vᵀ)ᵀ diag(1/s²) Vᵀ
+        J ≈ U S Vᵀ  →  cov ≈ Vᵀ diag(1/s²) V
 
-        Singular values below numerical precision are discarded to
-        regularize the inversion.
-
+        Singular values below numerical precision are discarded to regularize
+        the inversion.
         Parameters
         ----------
         ls_results : OptimizeResult
@@ -225,25 +203,24 @@ class DiffusionLengthOptimization:
 
         Returns
         -------
-        list of uncertainties.ufloat
-            Best-fit diffusion lengths with 1σ uncertainties,
-            ordered as [layer_0, layer_1, ...].
-
-        Notes
-        -----
-        Off-diagonal covariance terms (parameter correlations) are not
-        currently returned. For strongly correlated layers this may
-        underestimate the true parameter uncertainty.
+        best_fit : np.ndarray
+            Best-fit diffusion lengths [nm], shape (n_layers,).
+        cov : np.ndarray
+            Full covariance matrix, shape (n_layers, n_layers).
+            Diagonal entries are variances; off-diagonal entries capture
+            parameter correlations and should not be neglected for
+            correlated layers.
         """
+
         J = ls_results.jac
         _, s, VT = np.linalg.svd(J, full_matrices=False)
         threshold = np.finfo(float).eps * max(J.shape) * s[0]
         s = s[s > threshold]
         VT = VT[:s.size]
         cov = np.dot(VT.T / s ** 2, VT)
-        return [ufloat(val, err) for val, err in zip(ls_results.x, np.sqrt(np.diag(cov)))]
+        return ls_results.x, cov
 
-    def optimize_diffusion_length(self, bounds=None) -> dict:
+    def optimize_diffusion_length(self, bounds=None) -> tuple:
         """
         Optimize diffusion lengths for all layers simultaneously.
 
@@ -259,9 +236,14 @@ class DiffusionLengthOptimization:
 
         Returns
         -------
-        dict of str → uncertainties.ufloat
-            Optimized diffusion length with 1σ uncertainty for each layer,
-            keyed as 'layer_0', 'layer_1', etc.
+        best_fit : np.ndarray
+            Best-fit diffusion lengths [nm], shape (n_layers,).
+            Ordered as [layer_0, layer_1, ...].
+        cov : np.ndarray
+            Full covariance matrix of shape (n_layers, n_layers).
+            Diagonal entries are variances; off-diagonal entries capture
+            parameter correlations. Marginal uncertainties can be obtained
+            via np.sqrt(np.diag(cov)).
 
         Raises
         ------
@@ -282,6 +264,5 @@ class DiffusionLengthOptimization:
         ub = [bounds[1]] * self.n_layers
 
         ls_result = least_squares(fun=self.residuals, x0=initial_guess, bounds=(lb, ub))
-        diffusion_lengths = self.extract_error(ls_result)
 
-        return {f'layer_{i}': dl for i, dl in enumerate(diffusion_lengths)}
+        return self.extract_fit_results(ls_result)

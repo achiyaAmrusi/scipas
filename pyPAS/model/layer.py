@@ -35,6 +35,8 @@ class Layer:
     ...                    mobility=0.1,
     ...                    bulk_annihilation_rate=0.1)
     >>> layer = Layer(start=0.0, width=1.0, material=copper)
+    >>> layer.width
+    1.0
     """
     material: Material
     start: float = 0.0  # [nm]

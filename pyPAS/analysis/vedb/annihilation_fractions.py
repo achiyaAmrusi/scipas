@@ -4,7 +4,7 @@ from warnings import warn
 from pyPAS.model.sample import Sample
 
 
-def annihilation_fraction_per_layer(positron_profile: xr.DataArray, sample: Sample) -> xr.DataArray:
+def compute_annihilation_fractions(positron_profile: xr.DataArray, sample: Sample) -> xr.DataArray:
     """
     Compute the annihilation fraction of positrons in each layer and at the surface.
 
@@ -48,7 +48,7 @@ def annihilation_fraction_per_layer(positron_profile: xr.DataArray, sample: Samp
      Examples
      --------
     >>> from pyPAS.model import Sample, Layer, Material
-    >>> from pyPAS.analysis import annihilation_fraction_per_layer
+    >>> from pyPAS.analysis import compute_annihilation_fractions
     >>> import xarray as xr
     >>> import numpy as np
     >>> silicon = Material(name="Silicon",
@@ -60,7 +60,7 @@ def annihilation_fraction_per_layer(positron_profile: xr.DataArray, sample: Samp
     >>> depth = np.arange(0, layer.width+1, 1)
     >>> positron_annihilation_profile = xr.DataArray(np.ones_like(depth), coords={'x':depth})
     >>> positron_annihilation_profile /= positron_annihilation_profile.integrate('x')
-    >>> res = annihilation_fraction_per_layer(positron_annihilation_profile, sample)
+    >>> res = compute_annihilation_fractions(positron_annihilation_profile, sample)
     >>> round(float(res.sum())) == 1.0
     True
     >>> round(float(res.sel(layer=-1)), 5) == 1e-4

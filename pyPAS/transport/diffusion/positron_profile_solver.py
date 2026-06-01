@@ -2,39 +2,63 @@ import numpy as np
 import xarray as xr
 from pyPAS.model.sample import Sample
 import scipy.sparse as sp
-import scipy.sparse.linalg as spla
-
 
 def profile_solver(positron_implantation_profile: xr.DataArray,
                    sample: Sample,
                    electric_field: xr.DataArray = None,
-                   mesh_size=10000):
+                   mesh_size: int =10000):
     """
-    Finite differences solver for the positron annihilation profile in a model, c(z).
-    detailed description of the solver will be published in future paper [].
+    Solve for the steady-state positron annihilation profile c(z) in a multilayer sample.
+
+    Uses a finite differences discretization of the 1D positron diffusion-drift-annihilation
+    equation with radiative boundary conditions at both surfaces. The sparse linear system is
+    solved directly via scipy.linlag solver.
+    A detailed derivation will be published in a future paper.
+
+    The governing equation solved is:
+
+        d/dz [ D(z) dc/dz ] - μ(z) E(z) dc/dz - λ(z) c(z) = -g(z)
+
+    where:
+        - D(z)  : spatially resolved diffusion coefficient [nm²/ps]
+        - μ(z)  : positron mobility [nm²/(ps·V)]
+        - E(z)  : electric field [V/nm]
+        - λ(z)  : effective annihilation rate [1/ps]
+        - g(z)  : positron implantation source profile [1/nm]
+        - c(z)  : positron density (solved quantity)
+
+    Boundary conditions:
+        - Surface (z=0)  : radiative condition with absorption length from sample
+        - Back surface   : radiative condition using bulk diffusion length L = sqrt(D/λ)
 
     Parameters
     ----------
-    - implantation: xarray.DataArray
-    Thermal positron implantation profile [positron/length] in the model.
-    Note that in the code the profile is linearly interpolated into the mesh points
-     See ghosh_profile, makhov_profile
-    - model: Sample
-    The model for which c(z) is calculated,
-      it is advised to define the last layer to be very large such that c(z) is expected to be negligible at the end of the model
-    - electric_field: xarray.DataArray
-    The electric field in the model
-    If None, taken to be 0
-    - mesh_size: int (default 10000)
-    Specifies the number of cells used to discretize the 1D domain in the finite element method.
+    positron_implantation_profile : xr.DataArray
+        Thermal positron implantation profile as a function of depth [positrons/nm],
+        with coordinate 'x' in nm. Typically computed via makhov_profile or ghosh_profile.
+        Linearly interpolated onto the mesh before solving.
+    sample : Sample
+        Multilayer sample defining geometry, material properties (diffusion, mobility,
+        annihilation rate) and surface absorption length. The last layer should be
+        sufficiently thick that c(z) ≈ 0 at its far end.
+    electric_field : xr.DataArray, optional
+        Electric field as a function of depth [V/nm], with coordinate 'x' in nm.
+        If None, the field is taken to be zero everywhere.
+    mesh_size : int, optional
+        Number of uniformly spaced mesh points spanning [0, sample_length()].
+        Default is 10000. Higher values improve accuracy at the cost of speed.
 
     Returns
     -------
-    The positron annihilation profile [annihilation/micron/s]
+    xr.DataArray
+        Positron annihilation profile c(z) [annihilations/nm/s] on the mesh grid,
+        with coordinate 'x' in nm.
     """
     # The mesh array
-    mesh_points = np.linspace(0, sample.sample_length(), mesh_size)
-
+    if mesh_size is not None:
+        mesh_points = np.linspace(start=0, stop=sample.sample_length(), num=int(mesh_size))
+    else:
+        raise ValueError("mesh_size must be an integer greater than 0.")
     # If the field is not defined it is taken to be 0
     if electric_field is None:
         electric_field = xr.DataArray(np.zeros(mesh_points.size), coords={'x': mesh_points})
@@ -48,7 +72,7 @@ def profile_solver(positron_implantation_profile: xr.DataArray,
         diffusion=ds["diffusion"].values,
         drift=ds["drift"].values,
         annihilation_rate=ds["annihilation_rate"].values,
-        absorbtion_length=sample.absorbtion_length)
+        absorption_length=sample.absorption_length)
 
     # define the thermal positron profile
     positron_implantation = positron_implantation_profile.interp(x=mesh_points)
@@ -58,33 +82,41 @@ def profile_solver(positron_implantation_profile: xr.DataArray,
 
     return xr.DataArray(final_positron_distribution, coords={'x': mesh_points})
 
-
 def sample_to_material_vectors(sample: Sample,
                                mesh_points: np.ndarray,
                                electric_field: xr.DataArray = None) -> xr.Dataset:
     """
-    Convert a layered Sample object into spatially resolved material property vectors
-    (diffusion, annihilation rate, drift).
+    Map a layered Sample onto spatially resolved material property vectors on a 1D mesh.
+
+    Each mesh point is assigned the material properties of the layer it falls in.
+    Layer boundaries are rounded to the nearest mesh point. The drift velocity
+    μ·E(z) is computed only when an electric field is provided.
 
     Parameters
     ----------
-    - model: Sample
-        The layered model defining material properties.
-    - mesh_points: np.ndarray
-        Evenly spaced mesh points spanning the model depth.
-    - electric_field: xr.DataArray, optional
-        Electric field defined on the mesh coordinates.
-        If None, assumed to be zero everywhere.
+    sample : Sample
+        Multilayer sample whose layers define material properties at each depth.
+    mesh_points : np.ndarray
+        1D array of uniformly spaced depth coordinates [nm] spanning [0, sample_length()].
+    electric_field : xr.DataArray, optional
+        Electric field as a function of depth [V/nm], with coordinate 'x' in nm.
+        Must be a xr.DataArray if provided. If None, drift is set to zero everywhere.
 
     Returns
     -------
     xr.Dataset
-        Dataset containing the material property vectors:
-        - diffusion [cm^2/s]
-        - annihilation_rate [1/s]
-        - drift [cm/s] (zero if no field)
-    """
+        A Dataset with coordinate 'x' (nm) and three variables:
+        - 'diffusion'        : positron diffusion coefficient D(z) [nm²/ps]
+        - 'annihilation_rate': effective annihilation rate λ(z) [1/ps],
+                               including bulk and all defect contributions
+        - 'drift'            : drift velocity μ(z)·E(z) [nm/ps],
+                               zero everywhere if no field is supplied
 
+    Raises
+    ------
+    ValueError
+        If electric_field is provided but is not type xr.DataArray.
+    """
     if electric_field is None:
         electric_field = xr.DataArray(np.zeros_like(mesh_points), coords={'x': mesh_points})
 
@@ -122,12 +154,51 @@ def sample_to_material_vectors(sample: Sample,
 
     return ds
 
-
 def diffusion_operator(mesh_points: np.ndarray,
                        diffusion: np.ndarray,
                        drift: np.ndarray,
                        annihilation_rate: np.ndarray,
-                       absorbtion_length: float):
+                       absorption_length: float):
+    """
+    Build the sparse tridiagonal finite-difference operator for the positron
+    diffusion-drift-annihilation equation.
+
+    Discretizes the operator:
+
+        L[c]_i = -[ D_{i+½}(c_{i+1} - c_i) - D_{i-½}(c_i - c_{i-1}) ] / dz²
+                 + μE_i (c_{i+1} - c_{i-1}) / (2 dz)
+                 + λ_i c_i
+
+    using central finite differences (second-order accurate in dz), with
+    interface diffusion coefficients averaged as D_{i+½} = (D_i + D_{i+1}) / 2.
+
+    Boundary conditions (radiative, applied at cell centers for stability):
+        - z = 0  : -D dc/dz = (D/absorption_length) · c
+                   enforced as: diag[0] accounts for the surface loss term
+        - z = L  : -D dc/dz = (D/L_bulk) · c,  L_bulk = sqrt(D[-1] / λ[-1])
+                   If λ[-1] = 0 (no annihilation in last layer), L_bulk → ∞
+                   and the back boundary becomes a zero-flux (Neumann) condition.
+
+    Parameters
+    ----------
+    mesh_points : np.ndarray
+        Uniformly spaced 1D mesh [nm] of length N. Spacing dz = mesh_points[1] - mesh_points[0].
+    diffusion : np.ndarray
+        Diffusion coefficient D(z) at each mesh point [nm²/ps], length N.
+    drift : np.ndarray
+        Drift velocity μ(z)·E(z) at each mesh point [nm/ps], length N.
+    annihilation_rate : np.ndarray
+        Effective annihilation rate λ(z) at each mesh point [1/ps], length N.
+    absorption_length : float
+        Positron surface absorption length [nm]. Controls the radiative boundary condition
+        at z = 0. A value of 0 would imply perfect surface absorption.
+
+    Returns
+    -------
+    sp.dia_matrix
+        Sparse N×N tridiagonal matrix in DIA format representing the discretized
+        operator. Convert to CSR before solving: operator.tocsr().
+    """
     # definitions
     dx = mesh_points[1] - mesh_points[0]
 
@@ -136,7 +207,7 @@ def diffusion_operator(mesh_points: np.ndarray,
     diag_lower = np.zeros(mesh_points.size - 1)
 
     # Calculate the 3 diagonals of the differential equation operator
-    # (note: We use central central finite differences o(dz**2))
+    # (note: We use central finite differences o(dz**2))
 
     diag[1:-1] = -((diffusion[2:] + 2*diffusion[1:-1]+ diffusion[:-2]) / 2 / dx ** 2 + annihilation_rate[1:-1])
     diag_upper[1:] = (diffusion[2:] + diffusion[1:-1]) / 2 / dx ** 2 - drift[2:] / 2 / dx
@@ -147,7 +218,7 @@ def diffusion_operator(mesh_points: np.ndarray,
     else:
         l_bulk = (diffusion[-1] / annihilation_rate[-1]) ** 0.5
     # boundary conditions are taken on the centers of the cells and not the edges for stability
-    diag[0] = -(2 * diffusion[0] / dx ** 2 + annihilation_rate[0] + (diffusion[0] / dx ** 2 + drift[0] / 2 / dx) * 2 * dx / absorbtion_length)
+    diag[0] = -(2 * diffusion[0] / dx ** 2 + annihilation_rate[0] + (diffusion[0] / dx ** 2 + drift[0] / 2 / dx) * 2 * dx / absorption_length)
     diag_upper[0] = 2*diffusion[0] / dx ** 2
 
 

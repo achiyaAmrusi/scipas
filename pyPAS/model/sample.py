@@ -40,11 +40,14 @@ class Sample:
     ...                    defects=[divacancy])
     >>> layer = Layer(start=0.0, width=10.0, material=silicon)
     >>> sample = Sample(layers=[layer], absorbtion_length=0.1)
-    >>> length = sample.sample_length()
+    >>> sample.sample_length()
+    10.0
     >>> l = sample.get_layer_at(position=5)
+    >>> l.material.name
+    'Silicon'
     """
     layers: List[Layer] = field(default_factory=list)
-    absorbtion_length: float = 0.0 # [nm]
+    absorption_length: float = 0.0 # [nm]
 
     def __post_init__(self):
         """Automatically set start positions of layers based on widths."""
