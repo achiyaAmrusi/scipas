@@ -168,15 +168,13 @@ Full worked examples are in the [`examples/`](./examples) directory:
 - [DB spectrum analysis](./examples/core/pas_db.ipynb) — load, calibrate, and extract S/W from a DB spectrum
 - [CDB analysis](./examples/core/pas_cdb.ipynb) — process coincidence data into a DB spectrum and S/W parameters
 
-**VEDB Analysis** (complete workflow)
+**VEDB Analysis**
 - [S(E) and W(E) lineshape extraction](./examples/vedb%20analysis/vedb_lineshape.ipynb) — load multi-energy DB spectra; compute S(E) and W(E) curves with errorbars and S–W parametric plot
 - [Diffusion-length fitting — measurement](./examples/vedb%20analysis/vedb_diffusion_length_measurement.ipynb) — fit L₊ from measured S(E) using the transport model; plot fit vs data and annihilation fractions per channel
+- [Diffusion-length fitting — simulation](./examples/diffusion%20length%20optimization/simulation%20-%20diffusion%20length%20optimization%20example.ipynb) — generate synthetic VEDB data and recover the input diffusion length
 
 **Implantation Profiles**
 - [Positron profile in Si](./examples/positron%20profile/positron%20profile%20in%20Si.ipynb) — Makhov and Ghosh profiles, multilayer stitching
-
-**VEDB Fitting (legacy)**
-- [Simulation example](./examples/diffusion%20length%20optimization/simulation%20-%20diffusion%20length%20optimization%20example.ipynb) — simulate VEDB data and recover diffusion lengths
 
 ---
 
