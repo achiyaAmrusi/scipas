@@ -173,8 +173,9 @@ Full worked examples are in the [`examples/`](./examples) directory:
 - [Diffusion-length fitting — measurement](./examples/vedb%20analysis/vedb_diffusion_length_measurement.ipynb) — fit L₊ from measured S(E) using the transport model; plot fit vs data and annihilation fractions per channel
 - [Diffusion-length fitting — two-layer simulation](./examples/vedb%20analysis/vedb_diffusion_length_2layer_simulation.ipynb) — simulate a damaged surface layer over bulk, fit both L₀ and L₁ simultaneously, and visualise the 2D χ² joint confidence region
 
-**Implantation Profiles**
-- [Positron profile in Si](./examples/positron%20profile/positron%20profile%20in%20Si.ipynb) — Makhov and Ghosh profiles, multilayer stitching
+**Implantation Profiles and Transport**
+- [Positron profile in Si](./examples/positron%20profile/positron%20profile%20in%20Si.ipynb) — Makhov and Ghosh profiles, multilayer stitching, transport solver, annihilation fractions
+- [Transport solver benchmark](./examples/transport%20benchmark/solver_benchmark.ipynb) — validates `profile_solver` against two analytical results: exact surface fraction formula and closed-form full profile; confirms O(N⁻²) convergence
 
 ---
 
