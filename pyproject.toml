@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=70.0.0"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "pyPAS"
+version = "0.3"
+description = "Positron Annihilation Spectroscopy analysis tools"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Achiya Yosef Amrusi", email = "ahia.amrosi@mail.huji.ac.il" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0.0,<3.0",
+    "pandas>=2.3,<4.0",
+    "scipy>=1.14.0",
+    "xarray>=2024.6.0",
+    "uncertainties>=3.1",
+    "pyspectrum>=0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+]
+
+[project.urls]
+Homepage = "https://github.com/achiyaAmrusi/pyPAS"
+Repository = "https://github.com/achiyaAmrusi/pyPAS"
