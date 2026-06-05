@@ -21,16 +21,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Upgrade pip and setuptools
-        run: pip install --upgrade pip "setuptools>=70.0.0"
-
       - name: Install pySpectrum
         run: |
           git clone https://github.com/achiyaAmrusi/pySpectrum.git
-          pip install -e ./pySpectrum
+          pip install ./pySpectrum
 
       - name: Install pyPAS
-        run: pip install -e ".[dev]"
+        run: pip install ".[dev]"
 
       - name: Run tests
         run: pytest tests/
