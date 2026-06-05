@@ -21,6 +21,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Upgrade setuptools
+        run: pip install --upgrade "setuptools>=70.0.0"
+
       - name: Install pySpectrum
         run: |
           git clone https://github.com/achiyaAmrusi/pySpectrum.git
