@@ -18,7 +18,7 @@ dependencies = [
     "scipy>=1.14.0",
     "xarray>=2024.6.0",
     "uncertainties>=3.1",
-    "pyspectrum>=0.3",
+    "scispectrum>=0.3",
 ]
 
 [project.optional-dependencies]
