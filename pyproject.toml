@@ -7,7 +7,7 @@ name = "pyPAS"
 version = "0.3"
 description = "Positron Annihilation Spectroscopy analysis tools"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Achiya Yosef Amrusi", email = "ahia.amrosi@mail.huji.ac.il" }
 ]
@@ -26,6 +26,9 @@ dev = [
     "pytest>=8.0",
     "pytest-cov",
 ]
+
+[tool.setuptools.packages.find]
+include = ["pyPAS*"]
 
 [project.urls]
 Homepage = "https://github.com/achiyaAmrusi/pyPAS"
