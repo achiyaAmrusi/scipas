@@ -2,17 +2,17 @@ import warnings
 import numpy as np
 import xarray as xr
 from uncertainties import nominal_value
-from pyspectrum.core import Domain, Spectrum
-from pyspectrum.calibration import AxisCalibration
-from pyspectrum.identification import SNRFinder, Convolution, gaussian_2_dev
-from pyspectrum.domain_analysis.single_peak import center_estimator, sum_under
+from scispectrum.core import Domain, Spectrum
+from scispectrum.calibration import AxisCalibration
+from scispectrum.identification import SNRFinder, Convolution, gaussian_2_dev
+from scispectrum.domain_analysis.single_peak import center_estimator, sum_under
 from pyPAS.core.const import ELECTRON_REST_MASS_KEV
 
 class PASdb(Domain):
     """
       Represents a Doppler broadening spectrum centered around the 511 keV annihilation peak.
 
-      This class extends `Domain` from `pyspectrum` and adds tools for calculating Doppler
+      This class extends `Domain` from `scispectrum` and adds tools for calculating Doppler
       broadening lineshape parameters (S and W), using uncertainty propagation via the
       `uncertainties` package.
 
@@ -26,7 +26,7 @@ class PASdb(Domain):
        The stop index of the annihilation peak
       centralize_peak : bool
       to centrlize the Peak coordinates to 511 [keV] in the peak center using the center estimator
-      from pyspectrum.domain_analysis
+      from scispectrum.domain_analysis
 
 
       Attributes
@@ -94,7 +94,7 @@ class PASdb(Domain):
         Examples
         --------
         >>> import numpy as np
-        >>> from pyspectrum import Spectrum, Domain, AxisCalibration, ResolutionCalibration
+        >>> from scispectrum import Spectrum, Domain, AxisCalibration, ResolutionCalibration
         >>> bins = np.linspace(511-100, 511+100, 1000)
         >>> centers = (bins[1:] + bins[:-1])/2
         >>> list_counts = np.random.normal(loc=511, scale=5, size=1000000)
@@ -117,7 +117,7 @@ class PASdb(Domain):
         the electron rest mass energy.
 
         The peak center is estimated using the weighted centroid method from
-        ``pyspectrum.domain_analysis.single_peak.center_estimator``. The axis
+        ``scispectrum.domain_analysis.single_peak.center_estimator``. The axis
         calibration of the parent Spectrum is then shifted so that the estimated
         center maps to ``electron_rest_mass_value``.
 
@@ -297,7 +297,7 @@ class PASdb(Domain):
         Identify the 511 keV annihilation peak in a spectrum and return it as a PASdb domain.
 
         The peak is located automatically using the SNR-based peak finder
-        (``pyspectrum.identification.SNRFinder``) with a Gaussian second derivative
+        (``scispectrum.identification.SNRFinder``) with a Gaussian second derivative
         convolution kernel. The spectrum must have a resolution calibration set,
         as it is used to scale the convolution window.
 
@@ -336,7 +336,7 @@ class PASdb(Domain):
         ValueError
             If no peak is found near the electron rest mass energy in the spectrum.
         """
-        # Load the pyspectrum file in form of DataFrame
+        # Load the scispectrum file in form of DataFrame
 
         convolution = Convolution(spectrum.resolution_calib.apply,
                                   gaussian_2_dev,

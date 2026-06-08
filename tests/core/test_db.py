@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pyspectrum import Spectrum, AxisCalibration, ResolutionCalibration
+from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
 from pyPAS.core.db import PASdb
 
 
@@ -46,7 +46,7 @@ def test_from_spectrum_returns_pasdb(gaussian_spectrum):
 
 def test_peak_centered_at_511(db):
     """After centralization, peak center should be close to 511 keV."""
-    from pyspectrum.domain_analysis.single_peak import center_estimator
+    from scispectrum.domain_analysis.single_peak import center_estimator
     from uncertainties import nominal_value
     center = nominal_value(center_estimator(db))
     assert np.isclose(center, 511.0, atol=0.1)

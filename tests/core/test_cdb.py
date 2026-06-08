@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from pyspectrum.core import Domain
-from pyspectrum.domain_analysis.single_peak import center_estimator
+from scispectrum.core import Domain
+from scispectrum.domain_analysis.single_peak import center_estimator
 from uncertainties import nominal_value
 
 from pyPAS.core import PAScdb, PASdb

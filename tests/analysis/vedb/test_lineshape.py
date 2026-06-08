@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from uncertainties import UFloat
 
-from pyspectrum import Spectrum, AxisCalibration, ResolutionCalibration
+from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
 from pyPAS.core.db import PASdb
 from pyPAS.analysis.vedb.lineshape import compute_s_lineshape, compute_w_lineshape
 

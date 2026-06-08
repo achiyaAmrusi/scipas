@@ -1,4 +1,4 @@
-from pyspectrum import Spectrum
+from scispectrum import Spectrum
 from abc import ABC, abstractmethod
 import numpy as np
 

@@ -1,4 +1,4 @@
-from pyspectrum import Spectrum
+from scispectrum import Spectrum
 from pyPAS.core.time_resolution import  TimeResolution
 
 class PASLifetime:

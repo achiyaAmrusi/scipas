@@ -4,7 +4,7 @@ import pytest
 from pyPAS.core.time_resolution import MultiGaussianRF
 from pyPAS.model.lifetime import LifetimeModel
 from pyPAS.analysis.lifetime.generator import generate_analytical_lt_spectrum
-from pyspectrum import Spectrum
+from scispectrum import Spectrum
 # -----------------------------------------------------------------------------
 # Fixtures
 # -----------------------------------------------------------------------------
