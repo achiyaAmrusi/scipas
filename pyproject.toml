@@ -30,6 +30,9 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["pyPAS*"]
 
+[tool.setuptools.package-data]
+"pyPAS" = ["libs/**/*.txt"]
+
 [project.urls]
 Homepage = "https://github.com/achiyaAmrusi/pyPAS"
 Repository = "https://github.com/achiyaAmrusi/pyPAS"
