@@ -1,5 +1,7 @@
-from pathlib import Path
+from importlib.resources import files
 import pandas as pd
+
+_DATA = files('pyPAS.libs.positron_profile')
 
 
 def ghosh_material_parameters():
@@ -24,16 +26,8 @@ def ghosh_material_parameters():
     >>> params.iloc[0]['Material']
     'Be'
     """
-    # Navigate to the 'lib' directory within the current directory
-    parameters_file_path = Path(__file__).parents[2] / 'libs/positron_profile/gosh_profile_parameters.txt'
-
-    # Read the contents of the file
-    try:
-        parm = pd.read_csv(parameters_file_path)
-    except FileNotFoundError:
-        print(f"Error: File '{parameters_file_path}' not found.")
-        parm = None
-    return parm
+    with _DATA.joinpath('gosh_profile_parameters.txt').open() as f:
+        return pd.read_csv(f)
 
 
 def makhov_material_parameters():
@@ -61,14 +55,5 @@ def makhov_material_parameters():
     >>> params.iloc[0]['Material']
     'Be'
     """
-
-    # Navigate to the 'lib' directory within the current directory
-    parameters_file_path = Path(__file__).parents[2] / 'libs/positron_profile/makhov_profile_parameters.txt'
-
-    # Read the contents of the file
-    try:
-        parm = pd.read_csv(parameters_file_path)
-    except FileNotFoundError:
-        print(f"Error: File '{parameters_file_path}' not found.")
-        parm = None
-    return parm
+    with _DATA.joinpath('makhov_profile_parameters.txt').open() as f:
+        return pd.read_csv(f)
