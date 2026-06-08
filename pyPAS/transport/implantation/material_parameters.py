@@ -25,7 +25,7 @@ def ghosh_material_parameters():
     'Be'
     """
     # Navigate to the 'lib' directory within the current directory
-    parameters_file_path = Path(__file__).parent / 'data/gosh_profile_parameters.txt'
+    parameters_file_path = Path(__file__).parents[2] / 'libs/positron_profile/gosh_profile_parameters.txt'
 
     # Read the contents of the file
     try:
@@ -63,7 +63,7 @@ def makhov_material_parameters():
     """
 
     # Navigate to the 'lib' directory within the current directory
-    parameters_file_path = Path(__file__).parent / 'data/makhov_profile_parameters.txt'
+    parameters_file_path = Path(__file__).parents[2] / 'libs/positron_profile/makhov_profile_parameters.txt'
 
     # Read the contents of the file
     try:
