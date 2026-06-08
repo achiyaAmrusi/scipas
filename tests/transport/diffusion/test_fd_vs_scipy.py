@@ -110,7 +110,7 @@ def test_single_layer_no_drift(homogeneous_sample):
     source = _gaussian_source(sample.sample_length(), center=60.0, sigma=8.0)
 
     fd = profile_solver(source, sample, mesh_size=1000)
-    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=200, max_nodes=200)
+    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=1000, max_nodes=1000)
 
 
     err = _normalized_l2(fd, sc)
@@ -123,7 +123,7 @@ def test_deep_source_no_drift(homogeneous_sample):
     source = _gaussian_source(sample.sample_length(), center=200.0, sigma=10.0)
 
     fd = profile_solver(source, sample, mesh_size=1000)
-    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=200, max_nodes=200)
+    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=1000, max_nodes=1000)
 
 
     err = _normalized_l2(fd, sc)
@@ -142,7 +142,7 @@ def test_source_near_surface(homogeneous_sample):
     source = _gaussian_source(sample.sample_length(), center=30.0, sigma=6.0)
 
     fd = profile_solver(source, sample, mesh_size=1000)
-    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=200, max_nodes=200)
+    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=1000, max_nodes=1000)
 
 
     assert np.all(fd.values >= -1e-8 * fd.values.max()), "FD profile has negative values"
@@ -156,7 +156,7 @@ def test_profile_peak_location_matches(homogeneous_sample):
     source = _gaussian_source(sample.sample_length(), center=60.0, sigma=8.0)
 
     fd = profile_solver(source, sample, mesh_size=1000)
-    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=200, max_nodes=200)
+    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=1000, max_nodes=1000)
 
 
     x  = fd.coords["x"].values
@@ -184,7 +184,7 @@ def test_total_annihilation_budget(homogeneous_sample):
     lam    = sample.layers[0].material.bulk_annihilation_rate
 
     fd = profile_solver(source, sample, mesh_size=1000)
-    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=200, max_nodes=200)
+    sc = scipy_profile_solver(source, sample, num_of_mesh_cells=1000, max_nodes=1000)
 
 
 
@@ -208,7 +208,7 @@ def test_drift_weak_field(drift_sample):
     E      = _uniform_field(sample.sample_length(), 0.5)
 
     fd = profile_solver(source, sample, electric_field=E, mesh_size=1000)
-    sc = scipy_profile_solver(source, sample, electric_field=E, num_of_mesh_cells=200, max_nodes=200)
+    sc = scipy_profile_solver(source, sample, electric_field=E, num_of_mesh_cells=1000, max_nodes=1000)
 
 
     err = _normalized_l2(fd, sc, x_min=20.0, x_max=280.0)
@@ -222,7 +222,7 @@ def test_drift_strong_field(drift_sample):
     E      = _uniform_field(sample.sample_length(), 2.0)
 
     fd = profile_solver(source, sample, electric_field=E, mesh_size=1000)
-    sc = scipy_profile_solver(source, sample, electric_field=E, num_of_mesh_cells=200, max_nodes=200)
+    sc = scipy_profile_solver(source, sample, electric_field=E, num_of_mesh_cells=1000, max_nodes=1000)
 
 
     err = _normalized_l2(fd, sc, x_min=20.0, x_max=280.0)
@@ -241,8 +241,8 @@ def test_drift_shifts_profile_deeper(drift_sample):
 
     fd_no = profile_solver(source, sample,                   mesh_size=1000)
     fd_dr = profile_solver(source, sample, electric_field=E,  mesh_size=1000)
-    sc_no = scipy_profile_solver(source, sample,                   num_of_mesh_cells=200, max_nodes=200)
-    sc_dr = scipy_profile_solver(source, sample, electric_field=E, num_of_mesh_cells=200, max_nodes=200)
+    sc_no = scipy_profile_solver(source, sample,                   num_of_mesh_cells=1000, max_nodes=1000)
+    sc_dr = scipy_profile_solver(source, sample, electric_field=E, num_of_mesh_cells=1000, max_nodes=1000)
 
 
     x = fd_no.coords["x"].values
