@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyPAS"
-version = "0.3"
+version = "0.3.0"
 description = "Positron Annihilation Spectroscopy analysis tools"
 readme = "README.md"
 license = "MIT"
