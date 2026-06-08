@@ -45,7 +45,7 @@ def compute_s_lineshape(
     Examples
     --------
     >>> import numpy as np
-    >>> from pyspectrum import Spectrum, AxisCalibration, ResolutionCalibration
+    >>> from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
     >>> from pyPAS.core.db import PASdb
     >>> from pyPAS.analysis.vedb.lineshape import compute_s_lineshape
     >>> def make_db(center):
@@ -128,7 +128,7 @@ def compute_w_lineshape(
     Examples
     --------
     >>> import numpy as np
-    >>> from pyspectrum import Spectrum, AxisCalibration, ResolutionCalibration
+    >>> from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
     >>> from pyPAS.core.db import PASdb
     >>> from pyPAS.analysis.vedb.lineshape import compute_w_lineshape
     >>> def make_db(center):
