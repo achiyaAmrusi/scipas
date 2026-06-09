@@ -3,7 +3,7 @@ requires = ["setuptools>=74.1.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyPAS"
+name = "pypas"
 version = "0.3.0"
 description = "Positron Annihilation Spectroscopy analysis tools"
 readme = "README.md"
