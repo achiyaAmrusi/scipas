@@ -22,24 +22,19 @@ PyPAS provides a unified, modular workflow — from raw detector data to materia
 
 ## Installation
 
-PyPAS requires [pySpectrum](https://github.com/achiyaAmrusi/pySpectrum) as a companion package. Install both from GitHub:
-
 ```bash
-git clone https://github.com/achiyaAmrusi/pySpectrum
-cd pySpectrum
-pip install -e .
-cd ..
-
 git clone https://github.com/achiyaAmrusi/pyPAS
 cd pyPAS
-pip install -e .
+pip install .
 ```
 
 For a development install (includes test dependencies):
 
 ```bash
-pip install -e ".[dev]"
+pip install ".[dev]"
 ```
+
+The companion spectrum library [scispectrum](https://github.com/achiyaAmrusi/scispectrum) is installed automatically from PyPI.
 
 ---
 
@@ -49,8 +44,8 @@ pip install -e ".[dev]"
 
 ```python
 import pandas as pd
-from pyspectrum.core import Spectrum
-from pyspectrum.calibration import AxisCalibration, ResolutionCalibration
+from scispectrum.core import Spectrum
+from scispectrum.calibration import AxisCalibration, ResolutionCalibration
 from pyPAS.core import PASdb
 
 calib = AxisCalibration(lambda ch: 0.5 * ch + 1.0, name="energy_keV")
@@ -191,7 +186,7 @@ Following the [SPEC 0](https://scientific-python.org/specs/spec-0000/) support p
 | scipy | ≥ 1.14 |
 | xarray | ≥ 2024.6 |
 | uncertainties | ≥ 3.1 |
-| pyspectrum | ≥ 0.3 |
+| scispectrum | ≥ 0.3 |
 
 ---
 
