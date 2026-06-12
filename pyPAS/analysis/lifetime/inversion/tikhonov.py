@@ -94,6 +94,7 @@ class TikhonovRegularization(LifetimeInvert):
     def invert(self,
                pals: PASLifetime,
                bg_est: float = 0.0,
+               t0_shift: float = 0.0,
                maxiter: int = None,
                initial_alpha: float = 1e-5,
                method: str = "Powell",
@@ -105,15 +106,15 @@ class TikhonovRegularization(LifetimeInvert):
         Parameters
         ----------
         pals : measured lifetime spectrum with resolution function.
-        bg_est : background level estimated from the flat tail
-        Default 0.0
+        bg_est : background level estimated from the flat tail.
+            Default 0.0.
+        t0_shift : time-axis shift applied when building the response matrix.
+            Shifts the model's time-zero relative to the data. Default 0.0.
         maxiter : max NNLS iterations. Defaults to 10 * n_tau.
         initial_alpha : starting alpha for analysis. Default 1e-5.
         method : scipy minimize method. Default "Powell".
         regulator_bounds : (min, max) bounds for alpha search.
         minimization_ftol : analysis convergence tolerance.
-        error : if True, use Poisson-weighted chi-squared.
-        svd_truncate : if given, truncate SVD of response at this threshold.
 
         Returns
         -------
@@ -124,16 +125,16 @@ class TikhonovRegularization(LifetimeInvert):
         if maxiter is None:
             maxiter = 10 * self.characteristic_time_grid.shape[0]
 
-        # Background subtraction then normalization — bg excluded from norm
         counts = pals.lifetime.counts
         net_counts = counts - bg_est
-        norm = np.trapz(net_counts, pals.lifetime.energy)
+        norm = np.trapezoid(net_counts, pals.lifetime.energy)
         data = net_counts / norm
-        data_err = np.sqrt(np.maximum(counts, 1)) / norm  # Poisson error on raw counts
+        data_err = np.sqrt(np.maximum(counts, 1)) / norm
 
+        time_values = pals.lifetime.energy.values - t0_shift
         response = _response_matrix(
             self.characteristic_time_grid,
-            pals.lifetime.energy.values,
+            time_values,
             pals.resolution
         )
 

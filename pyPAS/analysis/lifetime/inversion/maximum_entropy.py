@@ -23,7 +23,7 @@ class MaximalEntropyInversion(LifetimeInvert):
 
     Reference: Bryan, R.K. (1990). Maximum Entropy and Bayesian Methods, 221-232.
 
-    Note: the result distribution is normalized using np.trapz and not rectangular sum.
+    Note: the result distribution is normalized using np.trapezoid and not rectangular sum.
     This can cause the normalization response@f(tau) to be off 1 due to boundry singularities.
     """
 
@@ -143,6 +143,7 @@ class MaximalEntropyInversion(LifetimeInvert):
     def invert(self,
                pals: PASLifetime,
                bg_est: float = 0.0,
+               t0_shift: float = 0.0,
                noise_level: float = 1e-3,
                initial_alpha: float = 1e-3,
                alpha_bounds: tuple = (1e-10, 1e2),
@@ -158,8 +159,9 @@ class MaximalEntropyInversion(LifetimeInvert):
         bg_est            : per-channel background (counts/channel) from tail
                             estimate: np.mean(counts[time > tail_start]).
                             Subtracted before normalization. Default 0.
-        t0_shift          : time-axis shift in ns from a reference measurement.
-                            Applied before building the response matrix. Default 0.
+        t0_shift          : time-axis shift applied when building the response
+                            matrix. Shifts the model's time-zero relative to the
+                            data. Default 0.0.
         noise_level       : SVD truncation threshold relative to the largest
                             singular value. Controls rank s. Default 1e-3.
         initial_alpha     : starting alpha for the analysis. Default 1e-3.
@@ -179,17 +181,16 @@ class MaximalEntropyInversion(LifetimeInvert):
         if maxiter is None:
             maxiter = 10 * n_tau
         if prior_model is None:
-            prior_model = np.ones(n_tau) / np.trapz(np.ones(n_tau) , self.characteristic_time_grid)
+            prior_model = np.ones(n_tau) / np.trapezoid(np.ones(n_tau), self.characteristic_time_grid)
 
-        # Background subtraction then normalization — bg excluded from norm
         counts = pals.lifetime.counts
         net_counts = counts - bg_est
-        norm = np.trapz(net_counts, pals.lifetime.energy)
+        norm = np.trapezoid(net_counts, pals.lifetime.energy)
         data = net_counts / norm
-        data_err = np.sqrt(np.maximum(counts, 1)) / norm  # Poisson error on raw counts
+        data_err = np.sqrt(np.maximum(counts, 1)) / norm
 
-        # Response matrix with truncated SVD
-        response = _response_matrix(self.characteristic_time_grid, pals.lifetime.energy.values, pals.resolution)
+        time_values = pals.lifetime.energy.values - t0_shift
+        response = _response_matrix(self.characteristic_time_grid, time_values, pals.resolution)
         w = np.ones(n_tau) * dtau
         w[0] *= 0.5
         w[-1] *= 0.5
