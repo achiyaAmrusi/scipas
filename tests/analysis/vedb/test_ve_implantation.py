@@ -80,7 +80,8 @@ def test_input_lists_not_mutated(cu_params):
     mats = [cu_params]
     dens = [cu_params.density]
     wids = [500]   # depth_vector[-1] > sum(widths) → mutation would occur inside
-    variable_energy_implantation_profiles(ENERGIES, DEPTH, mats, dens, wids)
+    with pytest.warns(UserWarning, match="implantation depth is larger"):
+        variable_energy_implantation_profiles(ENERGIES, DEPTH, mats, dens, wids)
     assert len(mats) == 1
     assert len(dens) == 1
     assert len(wids) == 1
