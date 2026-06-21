@@ -20,7 +20,7 @@ def ghosh_profile(positron_energy,depth_vector,  density, gosh_parms):
     for example, aluminum parameters can be extracted using gosh_material_parmeters().iloc[4]
     Returns
     -------
-    The implanted thermalized positron distribution  [positrons/nm]
+    The implanted thermalized positron distribution  [1/nm]
     Reference
     ---------
     [1] V.J. Ghosh et al. https://doi.org/10.1016/0169-4332(94)00331-9.
@@ -29,7 +29,7 @@ def ghosh_profile(positron_energy,depth_vector,  density, gosh_parms):
     Examples
     --------
     >>> import numpy as np
-    >>> from pyPAS.transport import ghosh_profile, ghosh_material_parameters
+    >>> from pypas.transport import ghosh_profile, ghosh_material_parameters
     >>> depth_vector = np.arange(0, 5e3, 1)
     >>> Be_parms = ghosh_material_parameters().iloc[0]
     >>> pos_profile = ghosh_profile(positron_energy=10, depth_vector=depth_vector,
@@ -71,13 +71,13 @@ def makhov_profile( positron_energy, depth_vector, density, makhov_parms):
 
         Returns
         -------
-    The implanted thermalized positron distribution  [positrons/nano meter]
+    The implanted thermalized positron distribution  [1/nano meter]
 
     [1] Jerzy Dryzek et al. https://doi.org/10.1016/j.nimb.2008.06.033.
         Examples
     --------
     >>> import numpy as np
-    >>> from pyPAS.transport import makhov_material_parameters, makhov_profile
+    >>> from pypas.transport import makhov_material_parameters, makhov_profile
     >>> depth_vector = np.arange(0, 5e3, 1)
     >>> Be_parms = makhov_material_parameters().iloc[0]
     >>> pos_profile = makhov_profile(positron_energy=10, depth_vector=depth_vector,

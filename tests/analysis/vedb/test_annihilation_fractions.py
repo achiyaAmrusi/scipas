@@ -2,8 +2,8 @@
 import pytest
 import numpy as np
 import xarray as xr
-from pyPAS.model import Sample, Material, Layer
-from pyPAS.analysis import compute_annihilation_fractions
+from pypas.model import Sample, Material, Layer
+from pypas.analysis import compute_annihilation_fractions
 
 @pytest.fixture
 def tst_one_layer_sample()->Sample:

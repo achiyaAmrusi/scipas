@@ -5,8 +5,8 @@ from scipy.integrate import cumulative_trapezoid
 from scipy.constants import centi, micro, nano
 import xarray as xr
 
-from pyPAS.transport.implantation.utils import  get_layer_indices
-from pyPAS.transport.implantation.profiles import ghosh_profile, makhov_profile
+from pypas.transport.implantation.utils import  get_layer_indices
+from pypas.transport.implantation.profiles import ghosh_profile, makhov_profile
 
 def compute_cumulative_profile(
         positron_energy: float,
@@ -79,7 +79,7 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
         the positron implantation profile [positron/nm]
 
     >>> import numpy as np
-    >>> from pyPAS.transport import makhov_material_parameters, makhov_profile, multilayer_implantation_profile
+    >>> from pypas.transport import makhov_material_parameters, makhov_profile, multilayer_implantation_profile
     >>> depth_vector = np.arange(0, 5e3, 1)
     >>> Be_parms = makhov_material_parameters().iloc[0]
     >>> pos_profile = multilayer_implantation_profile(positron_energy=10, depth_vector=depth_vector,

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from scispectrum import AxisCalibration
-from pyPAS.core.const import ELECTRON_REST_MASS_KEV
+from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 class PasCoincidenceFilter:
     """
@@ -68,7 +68,7 @@ class PasCoincidenceFilter:
     >>> import pandas as pd
     >>> import numpy as np
     >>> from scispectrum import AxisCalibration
-    >>> from pyPAS.filter import PasCoincidenceFilter
+    >>> from pypas.filter import PasCoincidenceFilter
     >>> det_1 = pd.DataFrame({
     ... 'time':    [100, 200, 300, 400, 500],
     ... 'channel': [512, 498, 523, 480, 510]})
@@ -140,7 +140,7 @@ class PasCoincidenceFilter:
     >>> import pandas as pd
     >>> import numpy as np
     >>> from scispectrum import AxisCalibration
-    >>> from pyPAS.filter import PasCoincidenceFilter
+    >>> from pypas.filter import PasCoincidenceFilter
     >>> det_1 = pd.DataFrame({
     ... 'time':    [100, 200, 300, 400, 500],
     ... 'channel': [512, 498, 523, 480, 510]})

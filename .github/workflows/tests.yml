@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install pyPAS
+      - name: Install pypas
         run: pip install ".[dev]"
 
       - name: Run tests

@@ -6,7 +6,7 @@ from scispectrum.core import Domain, Spectrum
 from scispectrum.calibration import AxisCalibration
 from scispectrum.identification import SNRFinder, Convolution, gaussian_2_dev
 from scispectrum.domain_analysis.single_peak import center_estimator, sum_under
-from pyPAS.core.const import ELECTRON_REST_MASS_KEV
+from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 class PASdb(Domain):
     """

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from pyPAS.model.material import Material
+from pypas.model.material import Material
 
 @dataclass
 class Layer:
@@ -28,8 +28,8 @@ class Layer:
     material : Material
         Material description of the layer (including diffusion and annihilation properties).
 
-    >>> from pyPAS.model.layer import Layer
-    >>> from pyPAS.model import Material
+    >>> from pypas.model.layer import Layer
+    >>> from pypas.model import Material
     >>> copper = Material(name="copper",
     ...                    diffusion=0.1,
     ...                    mobility=0.1,

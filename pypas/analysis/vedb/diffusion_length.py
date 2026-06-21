@@ -3,9 +3,9 @@ import pandas as pd
 from uncertainties import ufloat
 from uncertainties.unumpy import nominal_values, std_devs
 from scipy.optimize import least_squares
-from pyPAS.model import Sample, Material, Layer
-from pyPAS.transport.diffusion import profile_solver
-from pyPAS.analysis.vedb.annihilation_fractions import compute_annihilation_fractions
+from pypas.model import Sample, Material, Layer
+from pypas.transport.diffusion import profile_solver
+from pypas.analysis.vedb.annihilation_fractions import compute_annihilation_fractions
 
 
 class DiffusionLengthOptimization:

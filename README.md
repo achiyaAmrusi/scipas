@@ -23,8 +23,8 @@ PyPAS provides a unified, modular workflow — from raw detector data to materia
 ## Installation
 
 ```bash
-git clone https://github.com/achiyaAmrusi/pyPAS
-cd pyPAS
+git clone https://github.com/achiyaAmrusi/pypas
+cd pypas
 pip install .
 ```
 
@@ -46,7 +46,7 @@ The companion spectrum library [scispectrum](https://github.com/achiyaAmrusi/sci
 import pandas as pd
 from scispectrum.core import Spectrum
 from scispectrum.calibration import AxisCalibration, ResolutionCalibration
-from pyPAS.core import PASdb
+from pypas.core import PASdb
 
 calib = AxisCalibration(lambda ch: 0.5 * ch + 1.0, name="energy_keV")
 res   = ResolutionCalibration(lambda e: 1.8)   # constant FWHM in keV
@@ -68,8 +68,8 @@ print(s, w)  # ufloat values with propagated uncertainties
 ### Coincidence Doppler Broadening
 
 ```python
-from pyPAS.filter import PasCoincidenceFilter
-from pyPAS.core import PAScdb
+from pypas.filter import PasCoincidenceFilter
+from pypas.core import PAScdb
 
 # Step 1: find time-coincident events
 pairs = PasCoincidenceFilter.time_coincidence_filter(
@@ -94,7 +94,7 @@ res = cdb.resolution()           # 1D resolution spectrum
 
 ```python
 import numpy as np
-from pyPAS.transport import makhov_profile, makhov_material_parameters
+from pypas.transport import makhov_profile, makhov_material_parameters
 
 depth  = np.arange(0, 5000, 1)   # nm
 params = makhov_material_parameters()
@@ -107,7 +107,7 @@ profile = makhov_profile(positron_energy=10, depth_vector=depth,
 ### Multilayer implantation profile
 
 ```python
-from pyPAS.transport import (multilayer_implantation_profile,
+from pypas.transport import (multilayer_implantation_profile,
                               makhov_profile, makhov_material_parameters)
 
 params = makhov_material_parameters()
@@ -126,8 +126,8 @@ profile = multilayer_implantation_profile(
 ### Positron transport — diffusion solver
 
 ```python
-from pyPAS.model import Sample, Layer, Material
-from pyPAS.transport import profile_solver
+from pypas.model import Sample, Layer, Material
+from pypas.transport import profile_solver
 
 silicon = Material(name="Si", diffusion=1.0, mobility=0.0,
                    bulk_annihilation_rate=2.0)
@@ -141,7 +141,7 @@ positron_profile = profile_solver(implantation_profile, sample)
 ### VEDB diffusion-length fitting
 
 ```python
-from pyPAS.analysis import DiffusionLengthOptimization
+from pypas.analysis import DiffusionLengthOptimization
 
 optimizer = DiffusionLengthOptimization(
     positron_implantation_profiles=profiles,   # list of xr.DataArray, one per energy

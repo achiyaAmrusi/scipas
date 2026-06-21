@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 from warnings import warn
-from pyPAS.model.sample import Sample
+from pypas.model.sample import Sample
 
 
 def compute_annihilation_fractions(positron_profile: xr.DataArray, sample: Sample) -> xr.DataArray:
@@ -47,8 +47,8 @@ def compute_annihilation_fractions(positron_profile: xr.DataArray, sample: Sampl
 
      Examples
      --------
-    >>> from pyPAS.model import Sample, Layer, Material
-    >>> from pyPAS.analysis import compute_annihilation_fractions
+    >>> from pypas.model import Sample, Layer, Material
+    >>> from pypas.analysis import compute_annihilation_fractions
     >>> import xarray as xr
     >>> import numpy as np
     >>> silicon = Material(name="Silicon",

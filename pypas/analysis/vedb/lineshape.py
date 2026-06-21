@@ -1,5 +1,5 @@
 import pandas as pd
-from pyPAS.core.const import ELECTRON_REST_MASS_KEV
+from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 
 def compute_s_lineshape(
@@ -46,8 +46,8 @@ def compute_s_lineshape(
     --------
     >>> import numpy as np
     >>> from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-    >>> from pyPAS.core.db import PASdb
-    >>> from pyPAS.analysis.vedb.lineshape import compute_s_lineshape
+    >>> from pypas.core.db import PASdb
+    >>> from pypas.analysis.vedb.lineshape import compute_s_lineshape
     >>> def make_db(center):
     ...     bins = np.linspace(center - 10, center + 10, 200)
     ...     ax = (bins[:-1] + bins[1:]) / 2
@@ -129,8 +129,8 @@ def compute_w_lineshape(
     --------
     >>> import numpy as np
     >>> from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-    >>> from pyPAS.core.db import PASdb
-    >>> from pyPAS.analysis.vedb.lineshape import compute_w_lineshape
+    >>> from pypas.core.db import PASdb
+    >>> from pypas.analysis.vedb.lineshape import compute_w_lineshape
     >>> def make_db(center):
     ...     bins = np.linspace(center - 10, center + 10, 200)
     ...     ax = (bins[:-1] + bins[1:]) / 2

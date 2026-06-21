@@ -28,11 +28,11 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["pyPAS*"]
+include = ["pypas*"]
 
 [tool.setuptools.package-data]
-"pyPAS" = ["libs/**/*.txt"]
+"pypas" = ["libs/**/*.txt"]
 
 [project.urls]
-Homepage = "https://github.com/achiyaAmrusi/pyPAS"
-Repository = "https://github.com/achiyaAmrusi/pyPAS"
+Homepage = "https://github.com/achiyaAmrusi/pypas"
+Repository = "https://github.com/achiyaAmrusi/pypas"

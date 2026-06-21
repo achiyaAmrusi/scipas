@@ -20,10 +20,10 @@ import numpy as np
 import xarray as xr
 import pytest
 
-from pyPAS.model.material import Material
-from pyPAS.model.layer import Layer
-from pyPAS.model.sample import Sample
-from pyPAS.transport.diffusion.positron_profile_solver import profile_solver
+from pypas.model.material import Material
+from pypas.model.layer import Layer
+from pypas.model.sample import Sample
+from pypas.transport.diffusion.positron_profile_solver import profile_solver
 
 
 # ── analytical reference ──────────────────────────────────────────────────────

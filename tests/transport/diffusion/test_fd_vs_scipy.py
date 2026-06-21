@@ -28,11 +28,11 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from pyPAS.model.material import Material
-from pyPAS.model.layer import Layer
-from pyPAS.model.sample import Sample
-from pyPAS.transport.diffusion.positron_profile_solver import profile_solver
-from pyPAS.analysis.vedb.annihilation_fractions import compute_annihilation_fractions
+from pypas.model.material import Material
+from pypas.model.layer import Layer
+from pypas.model.sample import Sample
+from pypas.transport.diffusion.positron_profile_solver import profile_solver
+from pypas.analysis.vedb.annihilation_fractions import compute_annihilation_fractions
 
 sys.path.insert(0, os.path.dirname(__file__))
 from scipy_positron_profile_solver import scipy_profile_solver

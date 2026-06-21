@@ -3,8 +3,8 @@ import pandas as pd
 from scispectrum.core import Spectrum
 from scispectrum.calibration import AxisCalibration
 import xarray as xr
-from pyPAS.core import PASdb
-from pyPAS.core.const import ELECTRON_REST_MASS_KEV
+from pypas.core import PASdb
+from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 class PAScdb:
     """

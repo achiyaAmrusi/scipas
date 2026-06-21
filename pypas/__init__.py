@@ -1,15 +1,15 @@
 # Core analysis classes
-from pyPAS.core import PASdb, PAScdb
-from pyPAS.core.const import ELECTRON_REST_MASS_KEV
+from pypas.core import PASdb, PAScdb
+from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 # Model / geometry
-from pyPAS.model import Material, Defect, Layer, Sample
+from pypas.model import Material, Defect, Layer, Sample
 
 # Coincidence filter
-from pyPAS.filter import PasCoincidenceFilter
+from pypas.filter import PasCoincidenceFilter
 
 # Transport
-from pyPAS.transport import (
+from pypas.transport import (
     ghosh_profile,
     makhov_profile,
     ghosh_material_parameters,
@@ -19,5 +19,5 @@ from pyPAS.transport import (
 )
 
 # VEDB analysis
-from pyPAS.analysis import (DiffusionLengthOptimization, compute_s_lineshape, compute_w_lineshape,
+from pypas.analysis import (DiffusionLengthOptimization, compute_s_lineshape, compute_w_lineshape,
                             variable_energy_implantation_profiles)
