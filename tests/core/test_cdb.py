@@ -6,7 +6,7 @@ from scispectrum.core import Domain
 from scispectrum.domain_analysis.single_peak import center_estimator
 from uncertainties import nominal_value
 
-from pypas.core import PAScdb, PASdb
+from pypas.core import CDB, DB
 from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 
@@ -27,7 +27,7 @@ def symmetric_pairs():
 
 @pytest.fixture
 def cdb(symmetric_pairs):
-    return PAScdb(symmetric_pairs, energy_min=-4, energy_max=4, mesh_interval=0.1)
+    return CDB(symmetric_pairs, energy_min=-4, energy_max=4, mesh_interval=0.1)
 
 
 ENERGY_MIN = -4.0
@@ -38,33 +38,33 @@ MESH = 0.1
 # ── construction ──────────────────────────────────────────────────────────────
 
 def test_construction_valid(symmetric_pairs):
-    cdb = PAScdb(symmetric_pairs, energy_min=ENERGY_MIN, energy_max=ENERGY_MAX, mesh_interval=MESH)
-    assert isinstance(cdb, PAScdb)
+    cdb = CDB(symmetric_pairs, energy_min=ENERGY_MIN, energy_max=ENERGY_MAX, mesh_interval=MESH)
+    assert isinstance(cdb, CDB)
 
 
 def test_construction_wrong_column_names():
     df = pd.DataFrame({'E1': [511.0], 'E2': [511.0]})
     with pytest.raises(ValueError, match="energy_1"):
-        PAScdb(df, energy_min=-4, energy_max=4, mesh_interval=0.1)
+        CDB(df, energy_min=-4, energy_max=4, mesh_interval=0.1)
 
 
 def test_construction_wrong_column_order():
     """Columns present but swapped — constructor must reject them."""
     df = pd.DataFrame({'energy_2': [511.0], 'energy_1': [511.0]})
     with pytest.raises(ValueError, match="energy_1"):
-        PAScdb(df, energy_min=-4, energy_max=4, mesh_interval=0.1)
+        CDB(df, energy_min=-4, energy_max=4, mesh_interval=0.1)
 
 
 def test_construction_energy_min_equals_max():
     df = pd.DataFrame({'energy_1': [511.0], 'energy_2': [511.0]})
     with pytest.raises(ValueError):
-        PAScdb(df, energy_min=4, energy_max=4, mesh_interval=0.1)
+        CDB(df, energy_min=4, energy_max=4, mesh_interval=0.1)
 
 
 def test_construction_energy_min_greater_than_max():
     df = pd.DataFrame({'energy_1': [511.0], 'energy_2': [511.0]})
     with pytest.raises(ValueError):
-        PAScdb(df, energy_min=5, energy_max=4, mesh_interval=0.1)
+        CDB(df, energy_min=5, energy_max=4, mesh_interval=0.1)
 
 
 # ── coincidence_map ───────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ def test_coincidence_map_cached(cdb):
 # ── doppler_broadening() ──────────────────────────────────────────────────────
 
 def test_doppler_broadening_returns_pasdb(cdb):
-    assert isinstance(cdb.doppler_broadening(), PASdb)
+    assert isinstance(cdb.doppler_broadening(), DB)
 
 
 def test_doppler_broadening_centered_at_zero(cdb):
@@ -118,7 +118,7 @@ def test_doppler_broadening_centered_at_zero(cdb):
 
 def test_doppler_broadening_no_centralize_returns_pasdb(cdb):
     db = cdb.doppler_broadening(centralize_peak=False)
-    assert isinstance(db, PASdb)
+    assert isinstance(db, DB)
 
 
 def test_doppler_broadening_counts_nonnegative(cdb):

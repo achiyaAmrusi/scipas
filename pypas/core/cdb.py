@@ -3,10 +3,10 @@ import pandas as pd
 from scispectrum.core import Spectrum
 from scispectrum.calibration import AxisCalibration
 import xarray as xr
-from pypas.core import PASdb
+from pypas.core import DB
 from pypas.core.const import ELECTRON_REST_MASS_KEV
 
-class PAScdb:
+class CDB:
     """
     Coincidence Doppler Broadening (CDB) analysis class.
 
@@ -26,9 +26,9 @@ class PAScdb:
 
     Methods
     -------
-    doppler_broadening(centralize_peak, center_value) -> PASdb
+    doppler_broadening(centralize_peak, center_value) -> DB
         Project the coincidence map along the resolution axis to produce a 1D
-        Doppler broadening spectrum wrapped in a ``PASdb`` domain.
+        Doppler broadening spectrum wrapped in a ``DB`` domain.
     resolution() -> Domain
         Project the coincidence map along the Doppler axis to produce a 1D
         resolution (sum-energy) spectrum.
@@ -45,7 +45,7 @@ class PAScdb:
                  energy_max: float,
                  mesh_interval: float):
         """
-        Initialize a PAScdb instance and precompute the 2D coincidence histogram.
+        Initialize a CDB instance and precompute the 2D coincidence histogram.
 
         The coincidence map is computed once at construction from the provided
         energy bounds and bin width, and cached as ``self.coincidence_map``.
@@ -83,7 +83,7 @@ class PAScdb:
         >>> df = pd.DataFrame({
         ...     'energy_1': np.random.normal(511, 1, 1000),
         ...     'energy_2': np.random.normal(511, 1, 1000)})
-        >>> cdb = PAScdb(df, energy_min=-4, energy_max=4, mesh_interval=0.1)
+        >>> cdb = CDB(df, energy_min=-4, energy_max=4, mesh_interval=0.1)
         >>> db = cdb.doppler_broadening(centralize_peak=False)   # projects the cached map
         >>> res = cdb.resolution()           # projects the cached map
         """
@@ -159,9 +159,9 @@ class PAScdb:
 
         The 2D coincidence histogram is summed over the resolution axis, collapsing
         it to a function of Doppler shift only: (E₁ − E₂)/2. The result is wrapped
-        in a ``PASdb`` domain for S/W parameter analysis.
+        in a ``DB`` domain for S/W parameter analysis.
 
-        Note: unlike ``PASdb.from_spectrum``, the default ``center_value`` here is 0
+        Note: unlike ``DB.from_spectrum``, the default ``center_value`` here is 0
         rather than 511 keV, because the CDB Doppler axis is naturally centered
         around zero by construction.
 
@@ -177,8 +177,8 @@ class PAScdb:
 
         Returns
         -------
-        PASdb
-            A PASdb domain containing the 1D Doppler broadening spectrum, ready
+        DB
+            A DB domain containing the 1D Doppler broadening spectrum, ready
             for S/W parameter calculation. Poisson errors (sqrt of counts) are
             assigned automatically.
 
@@ -193,7 +193,7 @@ class PAScdb:
             counts_err=np.sqrt(doppler_broadening.values),
             axis_calib=AxisCalibration.from_array(doppler_broadening.coords["doppler"].values))
 
-        return PASdb.from_domain(
+        return DB.from_domain(
             doppler_broadening_spectrum.domain(start_val=doppler_broadening_spectrum.axis[0],
                                                stop_val=doppler_broadening_spectrum.axis[-1]),
             centralize_peak=centralize_peak,

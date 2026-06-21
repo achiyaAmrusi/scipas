@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-from pypas.core.db import PASdb
+from pypas.core.db import DB
 
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ def gaussian_spectrum():
 
 @pytest.fixture
 def db(gaussian_spectrum):
-    return PASdb.from_spectrum(gaussian_spectrum)
+    return DB.from_spectrum(gaussian_spectrum)
 
 
 # window definitions — mirrors real usage
@@ -40,8 +40,8 @@ ENERGY_DOMAIN_W_R   = [512.7, 514.4]
 # ── construction ──────────────────────────────────────────────────────────────
 
 def test_from_spectrum_returns_pasdb(gaussian_spectrum):
-    db = PASdb.from_spectrum(gaussian_spectrum)
-    assert isinstance(db, PASdb)
+    db = DB.from_spectrum(gaussian_spectrum)
+    assert isinstance(db, DB)
 
 
 def test_peak_centered_at_511(db):
@@ -54,8 +54,8 @@ def test_peak_centered_at_511(db):
 
 def test_no_centralize(gaussian_spectrum):
     """With centralize_peak=False, axis should not be shifted."""
-    db_raw = PASdb.from_spectrum(gaussian_spectrum, centralize_peak=False)
-    assert isinstance(db_raw, PASdb)
+    db_raw = DB.from_spectrum(gaussian_spectrum, centralize_peak=False)
+    assert isinstance(db_raw, DB)
 
 
 # ── S parameter ───────────────────────────────────────────────────────────────

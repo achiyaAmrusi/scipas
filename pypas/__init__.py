@@ -1,5 +1,5 @@
 # Core analysis classes
-from pypas.core import PASdb, PAScdb
+from pypas.core import DB, CDB
 from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 # Model / geometry

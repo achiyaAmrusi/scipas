@@ -15,7 +15,7 @@ def compute_s_lineshape(
 
     Parameters
     ----------
-    db_spectra : list of PASdb
+    db_spectra : list of DB
         DB spectra, one per beam energy, in the same order as ``energies``.
     energies : array-like
         Positron beam energies [keV], one per spectrum.
@@ -26,7 +26,7 @@ def compute_s_lineshape(
     centralize : bool, optional
         If True (default), recenters each spectrum's axis calibration so the
         annihilation peak aligns with ``center_value`` before computing.
-        Modifies each PASdb's axis calibration in place.
+        Modifies each DB's axis calibration in place.
     center_value : float, optional
         Target energy for peak centralization [keV].
         Defaults to the electron rest mass energy (``ELECTRON_REST_MASS_KEV``).
@@ -46,7 +46,7 @@ def compute_s_lineshape(
     --------
     >>> import numpy as np
     >>> from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-    >>> from pypas.core.db import PASdb
+    >>> from pypas.core.db import DB
     >>> from pypas.analysis.vedb.lineshape import compute_s_lineshape
     >>> def make_db(center):
     ...     bins = np.linspace(center - 10, center + 10, 200)
@@ -55,7 +55,7 @@ def compute_s_lineshape(
     ...     spec = Spectrum(counts=counts, counts_err=np.sqrt(counts),
     ...                     axis_calib=AxisCalibration.from_array(ax),
     ...                     resolution_calib=ResolutionCalibration(lambda e: 3.0))
-    ...     return PASdb.from_spectrum(spec)
+    ...     return DB.from_spectrum(spec)
     >>> db_list = [make_db(511.0), make_db(510.8)]
     >>> s = compute_s_lineshape(db_list, [5.0, 10.0],
     ...                         energy_domain_total=[507.0, 515.0],
@@ -96,7 +96,7 @@ def compute_w_lineshape(
 
     Parameters
     ----------
-    db_spectra : list of PASdb
+    db_spectra : list of DB
         DB spectra, one per beam energy, in the same order as ``energies``.
     energies : array-like
         Positron beam energies [keV], one per spectrum.
@@ -109,7 +109,7 @@ def compute_w_lineshape(
     centralize : bool, optional
         If True (default), recenters each spectrum's axis calibration so the
         annihilation peak aligns with ``center_value`` before computing.
-        Modifies each PASdb's axis calibration in place.
+        Modifies each DB's axis calibration in place.
     center_value : float, optional
         Target energy for peak centralization [keV].
         Defaults to the electron rest mass energy (``ELECTRON_REST_MASS_KEV``).
@@ -129,7 +129,7 @@ def compute_w_lineshape(
     --------
     >>> import numpy as np
     >>> from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-    >>> from pypas.core.db import PASdb
+    >>> from pypas.core.db import DB
     >>> from pypas.analysis.vedb.lineshape import compute_w_lineshape
     >>> def make_db(center):
     ...     bins = np.linspace(center - 10, center + 10, 200)
@@ -138,7 +138,7 @@ def compute_w_lineshape(
     ...     spec = Spectrum(counts=counts, counts_err=np.sqrt(counts),
     ...                     axis_calib=AxisCalibration.from_array(ax),
     ...                     resolution_calib=ResolutionCalibration(lambda e: 3.0))
-    ...     return PASdb.from_spectrum(spec)
+    ...     return DB.from_spectrum(spec)
     >>> db_list = [make_db(511.0), make_db(510.8)]
     >>> w = compute_w_lineshape(db_list, [5.0, 10.0],
     ...                         energy_domain_total=[507.0, 515.0],

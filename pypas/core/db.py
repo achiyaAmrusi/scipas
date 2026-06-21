@@ -8,7 +8,7 @@ from scispectrum.identification import SNRFinder, Convolution, gaussian_2_dev
 from scispectrum.domain_analysis.single_peak import center_estimator, sum_under
 from pypas.core.const import ELECTRON_REST_MASS_KEV
 
-class PASdb(Domain):
+class DB(Domain):
     """
       Represents a Doppler broadening spectrum centered around the 511 keV annihilation peak.
 
@@ -55,12 +55,12 @@ class PASdb(Domain):
           Calculate the W parameter, defined as the ratio of counts in the peak wings
           to the total counts across the full peak range.
 
-      from_domain(cls, domain, centralize_peak, center_value) -> PASdb
-          Wrap an existing ``Domain`` as a ``PASdb``, optionally recentering the axis.
+      from_domain(cls, domain, centralize_peak, center_value) -> DB
+          Wrap an existing ``Domain`` as a ``DB``, optionally recentering the axis.
 
-      from_spectrum(cls, spectrum, ...) -> PASdb
+      from_spectrum(cls, spectrum, ...) -> DB
           Locate the 511 keV annihilation peak in a ``Spectrum`` automatically and
-          return it as a ``PASdb`` domain.
+          return it as a ``DB`` domain.
 
       """
 
@@ -105,7 +105,7 @@ class PASdb(Domain):
         ...          counts_err=np.sqrt(counts_with_noise),
         ...          axis_calib=AxisCalibration.from_array(centers),
         ...          resolution_calib=resolution)
-        >>> db = PASdb.from_spectrum(spec)
+        >>> db = DB.from_spectrum(spec)
         """
         super().__init__(spectrum=spectrum, start=start, stop=stop, background=background)
         if centralize_peak:
@@ -260,7 +260,7 @@ class PASdb(Domain):
                     centralize_peak: bool = True,
                     center_value : float = ELECTRON_REST_MASS_KEV):
         """
-        Wrap an existing ``Domain`` as a ``PASdb``, optionally recentering the axis.
+        Wrap an existing ``Domain`` as a ``DB``, optionally recentering the axis.
 
         Parameters
         ----------
@@ -276,10 +276,10 @@ class PASdb(Domain):
 
         Returns
         -------
-        PASdb
-            The domain recast as a ``PASdb`` instance, with axis optionally recentered.
+        DB
+            The domain recast as a ``DB`` instance, with axis optionally recentered.
         """
-        return PASdb(domain.spectrum,
+        return DB(domain.spectrum,
                      domain.start,
                      domain.stop,
                      domain.background,
@@ -294,7 +294,7 @@ class PASdb(Domain):
                       persistence_factor=0.5,
                       centralize_peak: bool = True):
         """
-        Identify the 511 keV annihilation peak in a spectrum and return it as a PASdb domain.
+        Identify the 511 keV annihilation peak in a spectrum and return it as a DB domain.
 
         The peak is located automatically using the SNR-based peak finder
         (``scispectrum.identification.SNRFinder``) with a Gaussian second derivative
@@ -328,8 +328,8 @@ class PASdb(Domain):
 
         Returns
         -------
-        PASdb
-            A PASdb domain centered on the identified 511 keV annihilation peak.
+        DB
+            A DB domain centered on the identified 511 keV annihilation peak.
 
         Raises
         ------
@@ -346,4 +346,4 @@ class PASdb(Domain):
                                n_sigma_bg_threshold=n_sigma_bg_threshold,
                                persistence_factor=persistence_factor)
         domain = find_peaks.domain(spectrum, ELECTRON_REST_MASS_KEV)
-        return PASdb.from_domain(domain, centralize_peak=centralize_peak)
+        return DB.from_domain(domain, centralize_peak=centralize_peak)
