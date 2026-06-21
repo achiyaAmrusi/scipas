@@ -4,7 +4,7 @@ import pytest
 from uncertainties import UFloat
 
 from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-from pypas.core.db import PASdb
+from pypas.core.db import DB
 from pypas.analysis.vedb.lineshape import compute_s_lineshape, compute_w_lineshape
 
 
@@ -18,7 +18,7 @@ ENERGY_DOMAIN_W_R   = [512.7, 514.5]
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
-def _make_db(center: float = 511.0, sigma: float = 1.5) -> PASdb:
+def _make_db(center: float = 511.0, sigma: float = 1.5) -> DB:
     bins = np.linspace(center - 15, center + 15, 400)
     ax = (bins[:-1] + bins[1:]) / 2
     counts = np.round(5e4 * np.exp(-0.5 * ((ax - center) / sigma) ** 2) + 200).astype(int)
@@ -28,18 +28,18 @@ def _make_db(center: float = 511.0, sigma: float = 1.5) -> PASdb:
         axis_calib=AxisCalibration.from_array(ax),
         resolution_calib=ResolutionCalibration(lambda e: sigma * 2 * np.sqrt(2 * np.log(2))),
     )
-    return PASdb.from_spectrum(spec)
+    return DB.from_spectrum(spec)
 
 
 @pytest.fixture
 def db_list():
-    """Five synthetic PASdb objects with peaks centered at 511 keV."""
+    """Five synthetic DB objects with peaks centered at 511 keV."""
     return [_make_db(511.0) for _ in BEAM_ENERGIES]
 
 
 @pytest.fixture
 def db_list_off_center():
-    """Five synthetic PASdb objects whose peaks are shifted from 511 keV."""
+    """Five synthetic DB objects whose peaks are shifted from 511 keV."""
     return [_make_db(511.3) for _ in BEAM_ENERGIES]
 
 

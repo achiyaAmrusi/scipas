@@ -46,7 +46,7 @@ The companion spectrum library [scispectrum](https://github.com/achiyaAmrusi/sci
 import pandas as pd
 from scispectrum.core import Spectrum
 from scispectrum.calibration import AxisCalibration, ResolutionCalibration
-from pypas.core import PASdb
+from pypas.core import DB
 
 calib = AxisCalibration(lambda ch: 0.5 * ch + 1.0, name="energy_keV")
 res   = ResolutionCalibration(lambda e: 1.8)   # constant FWHM in keV
@@ -54,7 +54,7 @@ spec  = Spectrum.from_dataframe(df, channel_col="channel", counts_col="counts",
                                 axis_calib=calib, resolution_calib=res)
 
 # Identify the 511 keV peak automatically
-db = PASdb.from_spectrum(spec)
+db = DB.from_spectrum(spec)
 
 # Extract S and W parameters (energy in keV, relative to 511 keV)
 s = db.s_parameter_calculation(energy_domain_total=(-8, 8),
@@ -69,7 +69,7 @@ print(s, w)  # ufloat values with propagated uncertainties
 
 ```python
 from pypas.filter import PasCoincidenceFilter
-from pypas.core import PAScdb
+from pypas.core import CDB
 
 # Step 1: find time-coincident events
 pairs = PasCoincidenceFilter.time_coincidence_filter(
@@ -84,9 +84,9 @@ energy_pairs = PasCoincidenceFilter.energy_coincidence_filter(
     local_fwhm_2=1.2)
 
 # Step 3: build CDB object (histogram computed once at construction)
-cdb = PAScdb(energy_pairs, energy_min=-4, energy_max=4, mesh_interval=0.05)
+cdb = CDB(energy_pairs, energy_min=-4, energy_max=4, mesh_interval=0.05)
 
-db  = cdb.doppler_broadening()   # PASdb ready for S/W analysis
+db  = cdb.doppler_broadening()   # DB ready for S/W analysis
 res = cdb.resolution()           # 1D resolution spectrum
 ```
 

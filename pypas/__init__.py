@@ -1,5 +1,5 @@
 # Core analysis classes
-from pypas.core import PASdb, PAScdb, PASLifetime
+from pypas.core import DB, CDB, PASLifetime
 from pypas.core import TimeResolution, MeasuredRF, MultiGaussianRF
 from pypas.core.const import ELECTRON_REST_MASS_KEV
 
