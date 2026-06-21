@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
-from pyPAS.core.time_resolution import MultiGaussianRF
-from pyPAS.model.lifetime import LifetimeModel
-from pyPAS.analysis.lifetime.generator import generate_random_lt_spectrum
-from pyPAS.analysis.lifetime.inversion.tikhonov import TikhonovRegularization
-from pyPAS.analysis.lifetime.inversion.maximum_entropy import MaximalEntropyInversion
-from pyPAS.core.lifetime import PASLifetime
+from pypas.core.time_resolution import MultiGaussianRF
+from pypas.model.lifetime import LifetimeModel
+from pypas.analysis.lifetime.generator import generate_random_lt_spectrum
+from pypas.analysis.lifetime.inversion.tikhonov import TikhonovRegularization
+from pypas.analysis.lifetime.inversion.maximum_entropy import MaximalEntropyInversion
+from pypas.core.lifetime import PASLifetime
 from scispectrum import Spectrum
 
 
@@ -92,7 +92,7 @@ def test_melt_t0_shift(synthetic_pals):
 
 
 def test_imports_from_public_api():
-    from pyPAS.analysis.lifetime import (
+    from pypas.analysis.lifetime import (
         TikhonovRegularization,
         MaximalEntropyInversion,
         LifetimeInvert,

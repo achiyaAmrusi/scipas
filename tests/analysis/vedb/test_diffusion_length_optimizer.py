@@ -4,8 +4,8 @@ import pytest
 import xarray as xr
 from uncertainties import ufloat
 
-from pyPAS.model import Material, Layer, Sample
-from pyPAS.analysis.vedb.diffusion_length import DiffusionLengthOptimization
+from pypas.model import Material, Layer, Sample
+from pypas.analysis.vedb.diffusion_length import DiffusionLengthOptimization
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 

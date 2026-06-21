@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
-from pyPAS.core.time_resolution import MultiGaussianRF
-from pyPAS.model.lifetime import LifetimeModel
-from pyPAS.analysis.lifetime.generator import generate_random_lt_spectrum
-from pyPAS.analysis.lifetime.inversion.gp_regression import GPRegression
-from pyPAS.core.lifetime import PASLifetime
+from pypas.core.time_resolution import MultiGaussianRF
+from pypas.model.lifetime import LifetimeModel
+from pypas.analysis.lifetime.generator import generate_random_lt_spectrum
+from pypas.analysis.lifetime.inversion.gp_regression import GPRegression
+from pypas.core.lifetime import PASLifetime
 from scispectrum import Spectrum
 
 
@@ -95,10 +95,10 @@ def test_gp_t0_shift(synthetic_pals):
 
 
 def test_gp_inherits_lifetime_invert():
-    from pyPAS.analysis.lifetime.inversion import LifetimeInvert
+    from pypas.analysis.lifetime.inversion import LifetimeInvert
     assert issubclass(GPRegression, LifetimeInvert)
 
 
 def test_gp_import_from_public_api():
-    from pyPAS.analysis.lifetime import GPRegression as GP
+    from pypas.analysis.lifetime import GPRegression as GP
     assert GP is GPRegression

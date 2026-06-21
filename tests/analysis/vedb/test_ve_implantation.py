@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from pyPAS.transport import makhov_material_parameters, makhov_profile, ghosh_material_parameters, ghosh_profile
-from pyPAS.analysis.vedb.ve_implanation import variable_energy_implantation_profiles
+from pypas.transport import makhov_material_parameters, makhov_profile, ghosh_material_parameters, ghosh_profile
+from pypas.analysis.vedb.ve_implanation import variable_energy_implantation_profiles
 
 ENERGIES = [2.0, 5.0, 10.0, 20.0]
 DEPTH = np.linspace(0, 10000, 2000)

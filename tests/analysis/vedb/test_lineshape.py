@@ -4,8 +4,8 @@ import pytest
 from uncertainties import UFloat
 
 from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-from pyPAS.core.db import PASdb
-from pyPAS.analysis.vedb.lineshape import compute_s_lineshape, compute_w_lineshape
+from pypas.core.db import PASdb
+from pypas.analysis.vedb.lineshape import compute_s_lineshape, compute_w_lineshape
 
 
 BEAM_ENERGIES = [2.0, 5.0, 10.0, 15.0, 20.0]

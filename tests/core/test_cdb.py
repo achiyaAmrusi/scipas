@@ -6,8 +6,8 @@ from scispectrum.core import Domain
 from scispectrum.domain_analysis.single_peak import center_estimator
 from uncertainties import nominal_value
 
-from pyPAS.core import PAScdb, PASdb
-from pyPAS.core.const import ELECTRON_REST_MASS_KEV
+from pypas.core import PAScdb, PASdb
+from pypas.core.const import ELECTRON_REST_MASS_KEV
 
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
