@@ -29,7 +29,7 @@ def ghosh_profile(positron_energy,depth_vector,  density, gosh_parms):
     Examples
     --------
     >>> import numpy as np
-    >>> from pypas.transport import ghosh_profile, ghosh_material_parameters
+    >>> from scipas.transport import ghosh_profile, ghosh_material_parameters
     >>> depth_vector = np.arange(0, 5e3, 1)
     >>> Be_parms = ghosh_material_parameters().iloc[0]
     >>> pos_profile = ghosh_profile(positron_energy=10, depth_vector=depth_vector,
@@ -77,7 +77,7 @@ def makhov_profile( positron_energy, depth_vector, density, makhov_parms):
         Examples
     --------
     >>> import numpy as np
-    >>> from pypas.transport import makhov_material_parameters, makhov_profile
+    >>> from scipas.transport import makhov_material_parameters, makhov_profile
     >>> depth_vector = np.arange(0, 5e3, 1)
     >>> Be_parms = makhov_material_parameters().iloc[0]
     >>> pos_profile = makhov_profile(positron_energy=10, depth_vector=depth_vector,

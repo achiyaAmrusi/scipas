@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pypas.model.sample import Sample
+from scipas.model.sample import Sample
 import scipy.sparse as sp
 
 def profile_solver(positron_implantation_profile: xr.DataArray,

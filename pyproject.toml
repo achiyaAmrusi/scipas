@@ -3,7 +3,7 @@ requires = ["setuptools>=74.1.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pypas"
+name = "scipas"
 version = "0.3.0"
 description = "Positron Annihilation Spectroscopy analysis tools"
 readme = "README.md"
@@ -28,11 +28,11 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["pypas*"]
+include = ["scipas*"]
 
 [tool.setuptools.package-data]
-"pypas" = ["libs/**/*.txt"]
+"scipas" = ["libs/**/*.txt"]
 
 [project.urls]
-Homepage = "https://github.com/achiyaAmrusi/pypas"
-Repository = "https://github.com/achiyaAmrusi/pypas"
+Homepage = "https://github.com/achiyaAmrusi/scipas"
+Repository = "https://github.com/achiyaAmrusi/scipas"

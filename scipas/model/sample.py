@@ -1,4 +1,4 @@
-from pypas.model.layer import Layer
+from scipas.model.layer import Layer
 from typing import List
 from dataclasses import dataclass, field
 
@@ -31,7 +31,7 @@ class Sample:
     get_layer_at(position: float) -> Layer
         Returns the layer object in which a given depth (position) lies [nm].
 
-    >>> from pypas.model import Defect, Material, Layer, Sample
+    >>> from scipas.model import Defect, Material, Layer, Sample
     >>> divacancy = Defect(name='Si-divacancy', annihilation_rate=0.15)
     >>> silicon = Material(name="Silicon",
     ...                    diffusion=0.1,

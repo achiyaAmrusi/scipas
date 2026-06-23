@@ -16,7 +16,7 @@ class Defect:
 
     Examples
     --------
-    >>> from pypas.model import Defect
+    >>> from scipas.model import Defect
     >>> vacancy = Defect(name='Copper-vacancy', annihilation_rate=0.1)
     """
     name: str
@@ -61,7 +61,7 @@ class Material:
     - defects: List[Defect]
     Examples
     --------
-    >>> from pypas.model import Material
+    >>> from scipas.model import Material
     >>> divacancy = Defect(name='Copper-divacancy', annihilation_rate=0.15)
     >>> silicon = Material(name="Silicon",
     ...                    diffusion=0.1,

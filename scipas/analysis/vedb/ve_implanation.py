@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pypas.transport.implantation import multilayer_implantation_profile, makhov_profile
+from scipas.transport.implantation import multilayer_implantation_profile, makhov_profile
 
 
 def variable_energy_implantation_profiles(
@@ -53,8 +53,8 @@ def variable_energy_implantation_profiles(
     Examples
     --------
     >>> import numpy as np
-    >>> from pypas.transport import makhov_material_parameters, makhov_profile
-    >>> from pypas.analysis.vedb.ve_implanation import variable_energy_implantation_profiles
+    >>> from scipas.transport import makhov_material_parameters, makhov_profile
+    >>> from scipas.analysis.vedb.ve_implanation import variable_energy_implantation_profiles
     >>> params = makhov_material_parameters()
     >>> cu = params[params['Material'] == 'Cu'].iloc[0]
     >>> depth = np.linspace(0, 10000, 5000)

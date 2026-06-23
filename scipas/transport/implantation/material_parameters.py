@@ -1,7 +1,7 @@
 from importlib.resources import files
 import pandas as pd
 
-_DATA = files('pypas.libs.positron_profile')
+_DATA = files('scipas.libs.positron_profile')
 
 
 def ghosh_material_parameters():

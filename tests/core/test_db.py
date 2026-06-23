@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scispectrum import Spectrum, AxisCalibration, ResolutionCalibration
-from pypas.core.db import DB
+from scipas.core.db import DB
 
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
