@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from pypas.model.sample import Sample
+from scipas.model.sample import Sample
 from scipy.integrate import solve_bvp
 
 

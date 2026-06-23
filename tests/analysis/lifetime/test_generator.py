@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
-from pypas.core.time_resolution import MultiGaussianRF
-from pypas.model.lifetime import LifetimeModel
-from pypas.analysis.lifetime.generator import (
+from scipas.core.time_resolution import MultiGaussianRF
+from scipas.model.lifetime import LifetimeModel
+from scipas.analysis.lifetime.generator import (
     generate_analytical_lt_spectrum,
     generate_random_lt_spectrum,
 )
-from pypas.core.lifetime import PASLifetime
+from scipas.core.lifetime import PASLifetime
 
 
 @pytest.fixture

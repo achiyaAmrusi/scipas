@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from pypas.core.time_resolution import MultiGaussianRF
-from pypas.model.lifetime import LifetimeModel
-from pypas.analysis.lifetime.generator import generate_analytical_lt_spectrum
+from scipas.core.time_resolution import MultiGaussianRF
+from scipas.model.lifetime import LifetimeModel
+from scipas.analysis.lifetime.generator import generate_analytical_lt_spectrum
 from scispectrum import Spectrum
 # -----------------------------------------------------------------------------
 # Fixtures

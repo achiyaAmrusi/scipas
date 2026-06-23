@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pypas.transport import (
+from scipas.transport import (
     makhov_material_parameters, makhov_profile,
     multilayer_implantation_profile,
 )
