@@ -22,15 +22,17 @@ SciPAS provides a unified, modular workflow — from raw detector data to materi
 
 ## Installation
 
+Install the released version from PyPI:
+
+```bash
+pip install scipas
+```
+
+For development, clone the repository and install from source with the test dependencies:
+
 ```bash
 git clone https://github.com/achiyaAmrusi/scipas
 cd scipas
-pip install .
-```
-
-For a development install (includes test dependencies):
-
-```bash
 pip install ".[dev]"
 ```
 
