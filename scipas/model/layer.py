@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 from scipas.model.material import Material
 
 @dataclass
@@ -12,8 +13,10 @@ class Layer:
 
     Parameters
     ----------
-    start : float
-        Starting position of the layer in the model [nm].
+    start : float, optional
+        Starting position of the layer in the model [nm]. If omitted, it is
+        computed by the enclosing Sample from the cumulative widths of the
+        preceding layers.
     width : float
         Width (thickness) of the layer [nm].
     material : Material
@@ -39,5 +42,5 @@ class Layer:
     1.0
     """
     material: Material
-    start: float = 0.0  # [nm]
+    start: Optional[float] = None  # [nm]; filled in by Sample if omitted
     width: float  = 0.0 # [nm]

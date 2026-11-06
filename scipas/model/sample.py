@@ -1,6 +1,7 @@
 from scipas.model.layer import Layer
 from typing import List
 from dataclasses import dataclass, field
+import math
 
 
 @dataclass
@@ -50,10 +51,22 @@ class Sample:
     absorption_length: float = 0.0 # [nm]
 
     def __post_init__(self):
-        """Automatically set start positions of layers based on widths."""
+        """Fill in each layer's start from cumulative widths, or validate it.
+
+        A layer with no start is placed after the preceding layers. A layer
+        with an explicit start must match that computed position (within
+        floating-point tolerance); otherwise a ValueError is raised naming
+        the layer index and the expected vs. given start.
+        """
         start = 0.0
-        for layer in self.layers:
-            layer.start = start
+        for index, layer in enumerate(self.layers):
+            if layer.start is None:
+                layer.start = start
+            elif not math.isclose(layer.start, start, rel_tol=1e-9, abs_tol=1e-9):
+                raise ValueError(
+                    f"Layer {index}: expected start={start} from the cumulative "
+                    f"width of the preceding layers, but got start={layer.start}."
+                )
             start += layer.width
 
     def sample_length(self) -> float:
