@@ -84,14 +84,13 @@ class PasCoincidenceFilter:
         if col1 != col2:
             raise ValueError(f"Second column name mismatch: '{col1}' vs '{col2}'")
 
-        # 2D vector for the coincidence events (The array has the maximal size possible for the data)
-        time_coincidence_events = np.zeros((time_channel_1.shape[0],2))
+        # Growable list of matched pairs (a det-1 event can match several det-2 events)
+        time_coincidence_events = []
 
         # initialization of the index parameters
-        coincidence_index = 0
         index_2 = 0
         index_1 = 0
-        index_2_lim = time_channel_2.shape[0] - 1
+        index_2_lim = time_channel_2.shape[0]
 
         time_2 = time_channel_2['time'].iloc[index_2]
 
@@ -101,16 +100,18 @@ class PasCoincidenceFilter:
             while index_2 < index_2_lim and (time_1 >= time_2 or is_coin):
                 # if coincidence, save events and go on
                 if is_coin:
-                    time_coincidence_events[coincidence_index]  = np.array([time_channel_1[col1][index_1],
-                                                                            time_channel_2[col2][index_2]])
-                    coincidence_index = coincidence_index + 1
+                    time_coincidence_events.append((time_channel_1[col1][index_1],
+                                                     time_channel_2[col2][index_2]))
                 index_2 = index_2 + 1
-                time_2 = time_channel_2['time'][index_2]
+                # index_2 can now reach index_2_lim (last row consumed); don't re-fetch past it
+                if index_2 < index_2_lim:
+                    time_2 = time_channel_2['time'][index_2]
                 # check coincidence of the next
                 is_coin = abs(time_1 - time_2) < max_time_interval
 
-        return pd.DataFrame({col1+'_1': time_coincidence_events[:coincidence_index, 0],
-                             col1+'_2':  time_coincidence_events[:coincidence_index, 1]})
+        time_coincidence_events = np.array(time_coincidence_events, dtype=np.float64).reshape(-1, 2)
+        return pd.DataFrame({col1+'_1': time_coincidence_events[:, 0],
+                             col1+'_2':  time_coincidence_events[:, 1]})
 
     @classmethod
     def energy_coincidence_filter(cls, coincidence_events: pd.DataFrame,
