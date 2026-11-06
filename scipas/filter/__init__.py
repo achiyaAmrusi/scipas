@@ -1,8 +1,6 @@
 """
 Coincidence filtering package.
 
-PAS experiments require specialized coincidence filter modules, including:
-- Time–energy coincidence filters
-- Lifetime filters within an energy domain
+Currently provides time-energy coincidence filtering for PAS experiments.
 """
 from .pas_coincidence import PasCoincidenceFilter
