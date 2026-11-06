@@ -16,6 +16,8 @@ Exact solution (stable form):
     The Ã·exp(κ₁(z-L)) form avoids exp(κ₁·L)≫1 overflow for large L or κ₁.
 """
 
+import math
+
 import numpy as np
 import xarray as xr
 import pytest
@@ -65,9 +67,16 @@ _CASES = [
     ("short_Ldiff",       1.0, 0.0,  0.0, 4e-4, 0.5, 400.0),
     # larger La (less surface trapping)
     ("large_La_drift",    1.0, 0.5,  1.0, 1e-4, 10.0, 400.0),
+    # near-total surface absorption
+    ("tiny_La",           1.0, 0.0,  0.0, 1e-4, 1e-6, 400.0),
+    # La comparable to L_diff: neither limit dominates
+    ("unit_La",           1.0, 0.0,  0.0, 1e-4, 1.0, 400.0),
+    # inf La: reflecting (no surface loss) boundary
+    ("inf_La",            1.0, 0.0,  0.0, 1e-4, math.inf, 400.0),
 ]
 
 
+@pytest.mark.filterwarnings("error::RuntimeWarning")
 @pytest.mark.parametrize("label,D,mobility,E_val,lam,La,sample_len", _CASES,
                          ids=[c[0] for c in _CASES])
 def test_constant_source_analytical(label, D, mobility, E_val, lam, La, sample_len):

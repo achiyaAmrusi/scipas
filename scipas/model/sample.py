@@ -17,6 +17,9 @@ class Sample:
     layers : List[Layer]
         A list of layers in the model. The order of the list corresponds to increasing depth
         along the model axis (e.g. z-axis in 1D).
+    absorption_length : float
+        Positron surface absorption length [nm]. Required, keyword-only. Must be positive
+        (finite or `inf`); `inf` means no surface loss (reflecting boundary).
 
     Attributes
     ----------
@@ -39,7 +42,7 @@ class Sample:
     ...                    bulk_annihilation_rate=0.1,
     ...                    defects=[divacancy])
     >>> layer = Layer(start=0.0, width=10.0, material=silicon)
-    >>> sample = Sample(layers=[layer], absorbtion_length=0.1)
+    >>> sample = Sample(layers=[layer], absorption_length=0.1)
     >>> sample.sample_length()
     10.0
     >>> l = sample.get_layer_at(position=5)
@@ -47,10 +50,14 @@ class Sample:
     'Silicon'
     """
     layers: List[Layer] = field(default_factory=list)
-    absorption_length: float = 0.0 # [nm]
+    absorption_length: float = field(kw_only=True)  # [nm]
 
     def __post_init__(self):
         """Automatically set start positions of layers based on widths."""
+        if not (self.absorption_length > 0):
+            raise ValueError(
+                f"absorption_length must be positive (finite or inf), got {self.absorption_length!r}"
+            )
         start = 0.0
         for layer in self.layers:
             layer.start = start

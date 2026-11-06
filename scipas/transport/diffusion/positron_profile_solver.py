@@ -191,7 +191,8 @@ def diffusion_operator(mesh_points: np.ndarray,
         Effective annihilation rate λ(z) at each mesh point [1/ps], length N.
     absorption_length : float
         Positron surface absorption length [nm]. Controls the radiative boundary condition
-        at z = 0. A value of 0 would imply perfect surface absorption.
+        at z = 0. Must be positive: finite or `inf`. `inf` means no surface loss, i.e. a
+        reflecting (zero-flux) boundary at z = 0.
 
     Returns
     -------
