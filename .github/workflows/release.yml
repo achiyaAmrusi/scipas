@@ -19,7 +19,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install build
-        run: pip install build
+        run: pip install build==1.6.1
 
       - name: Build package
         run: python -m build
