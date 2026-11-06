@@ -101,8 +101,8 @@ def multilayer_implantation_profile(positron_energy: float, depth_vector: np.nda
     layers = get_layer_indices(depth_vector, widths)
 
     if sum(widths) < depth_vector[-1]:
-        materials_parameters.append(materials_parameters[-1])
-        densities.append(densities[-1])
+        materials_parameters = materials_parameters + [materials_parameters[-1]]
+        densities = densities + [densities[-1]]
 
     cumulatives = []
     for i, parms in enumerate(materials_parameters):

@@ -77,9 +77,9 @@ def variable_energy_implantation_profiles(
         profile = multilayer_implantation_profile(
             positron_energy=float(energy),
             depth_vector=depth_vector,
-            widths=list(widths),
-            materials_parameters=list(materials_parameters),
-            densities=list(densities),
+            widths=widths,
+            materials_parameters=materials_parameters,
+            densities=densities,
             implantation_profile_function=implantation_profile_function,
         )
         profiles.append(profile)

@@ -76,10 +76,10 @@ def test_higher_energy_deeper_mean_depth(cu_params):
 # ── input lists are not mutated ───────────────────────────────────────────────
 
 def test_input_lists_not_mutated(cu_params):
-    """multilayer_implantation_profile mutates its inputs; the wrapper must guard against this."""
+    """variable_energy_implantation_profiles must not mutate its caller-owned list inputs."""
     mats = [cu_params]
     dens = [cu_params.density]
-    wids = [500]   # depth_vector[-1] > sum(widths) → mutation would occur inside
+    wids = [500]   # depth_vector[-1] > sum(widths): exercises the extend-last-layer branch
     with pytest.warns(UserWarning, match="implantation depth is larger"):
         variable_energy_implantation_profiles(ENERGIES, DEPTH, mats, dens, wids)
     assert len(mats) == 1
