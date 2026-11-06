@@ -199,6 +199,12 @@ SciPAS is under active development. The DB/CDB analysis, implantation profiles, 
 
 ---
 
+## Citation
+
+If you use SciPAS in your work, please cite the paper: A. Y. Amrusi, S. May-Tal Beck, H. Steinberg and G. Ron, "SciPAS - Python package for positron annihilation spectroscopy Doppler broadening analysis", *Computer Physics Communications* **330**, 110449 (2027), [doi:10.1016/j.cpc.2026.110449](https://doi.org/10.1016/j.cpc.2026.110449).
+
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
